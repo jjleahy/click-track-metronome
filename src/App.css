@@ -1,0 +1,136 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 2rem);
+  padding: 1rem;
+}
+
+.app-header h1 {
+  margin: 0 0 1rem;
+  font-size: 1.6rem;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Score placeholder */
+.score-placeholder {
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.stage-label {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.measure-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.measure-cell {
+  border: 2px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem;
+  min-width: 90px;
+  text-align: center;
+  transition: border-color 0.1s, background-color 0.1s;
+}
+
+.measure-cell.active {
+  border-color: #646cff;
+  background-color: rgba(100, 108, 255, 0.1);
+}
+
+.measure-number {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.meter {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.beats {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.beat-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #555;
+  transition: background-color 0.05s;
+}
+
+.beat-dot.beat-active {
+  background: #646cff;
+}
+
+/* Metronome panel */
+.metronome-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+}
+
+.tempo-display {
+  font-size: 1.1rem;
+  min-width: 120px;
+}
+
+.play-button {
+  font-size: 1.1rem;
+  padding: 0.5rem 1.5rem;
+  background: #1a1a1a;
+  border: 2px solid #646cff;
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+  transition: background-color 0.15s;
+}
+
+.play-button:hover {
+  background: rgba(100, 108, 255, 0.15);
+}
+
+.play-button.playing {
+  background: rgba(100, 108, 255, 0.25);
+}
+
+/* Footer */
+.app-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.app-footer a {
+  color: #888;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  color: #aaa;
+}
