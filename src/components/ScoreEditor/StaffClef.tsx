@@ -3,26 +3,23 @@
 //
 // Staff lines are drawn with div primitives (SMuFL recommends this over
 // using the stave glyphs, which are intended for text-based applications).
-// TODO: Once MeasureCard also draws staff lines, extract shared staff-line
-// rendering into a StaffLines component if the duplication is straightforward.
 //
-// Layout constants (STAFF_TOP, STAFF_HEIGHT, STAFF_BOTTOM_PADDING) will move
-// to a shared visual-constants file so MeasureCard can import the same values.
-// STAFF_LINE_HEIGHT will likely move there too.
-// All Bravura-specific ratios below stay here — they're internal to this component.
+// Layout constants (HEADER_HEIGHT, STAFF_HEIGHT, FOOTER_HEIGHT, etc.) are
+// imported from staffConstants so StaffClef and Measure share the same
+// coordinate system and staff lines align horizontally.
 //
-// Clef positioning is derived from STAFF_TOP and STAFF_SPACE so rescaling
-// either constant keeps the glyph correctly placed on the staff.
+// Clef positioning is derived from HEADER_HEIGHT and STAFF_SPACE so
+// rescaling either constant keeps the glyph correctly placed on the staff.
+// All Bravura-specific ratios below are internal to this component.
 
-const STAFF_TOP = 150;    // px from component top to top staff line
-const STAFF_HEIGHT = 80;  // px from top staff line to bottom staff line
-const STAFF_BOTTOM_PADDING = 80; // px below bottom staff line
-
-const STAFF_LINES = 5;
-const STAFF_SPACE = STAFF_HEIGHT / (STAFF_LINES - 1); // 20px — derived, not set directly
-const STAFF_LINE_HEIGHT = 2; // px — thickness of each staff line
-
-const TOTAL_HEIGHT = STAFF_TOP + STAFF_HEIGHT + STAFF_BOTTOM_PADDING;
+import {
+  HEADER_HEIGHT,
+  FOOTER_HEIGHT,
+  STAFF_LINES,
+  STAFF_SPACE,
+  STAFF_LINE_HEIGHT,
+  TOTAL_HEIGHT,
+} from './staffConstants';
 
 // Treble clef: SMuFL U+E050
 const TREBLE_CLEF = '\uE050';
@@ -40,10 +37,15 @@ const CLEF_H_PADDING = STAFF_SPACE * 0.4;
 const COMPONENT_WIDTH = Math.round(CLEF_H_PADDING + STAFF_SPACE * 2.9 + CLEF_H_PADDING); // ~74px at STAFF_SPACE=20
 
 // The top pixel of Bravura's treble clef glyph aligns with the second staff
-// line (one STAFF_SPACE below STAFF_TOP), minus 2px for the glyph's internal
+// line (one STAFF_SPACE below HEADER_HEIGHT), minus 2px for the glyph's internal
 // top padding. Empirically confirmed at STAFF_SPACE=20px.
-const CLEF_TOP = STAFF_TOP + STAFF_SPACE - 2;
+const CLEF_TOP = HEADER_HEIGHT + STAFF_SPACE - 2;
 const CLEF_LEFT = CLEF_H_PADDING;
+
+// Suppress unused-variable warnings for FOOTER_HEIGHT — imported for completeness
+// so this file documents the full coordinate system, even though only HEADER_HEIGHT
+// is needed to position the clef.
+void FOOTER_HEIGHT;
 
 export function StaffClef() {
   return (
@@ -62,7 +64,7 @@ export function StaffClef() {
           key={i}
           style={{
             position: 'absolute',
-            top: STAFF_TOP + i * STAFF_SPACE,
+            top: HEADER_HEIGHT + i * STAFF_SPACE,
             left: 0,
             width: '100%',
             height: STAFF_LINE_HEIGHT,

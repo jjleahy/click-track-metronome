@@ -1,14 +1,14 @@
-import type { Measure } from '../../models/Exercise';
+import type { Measure as MeasureData } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../utils/tempoMap';
-import { MeasureCard } from './MeasureCard';
+import { Measure } from './Measure';
 import { StaffClef } from './StaffClef';
 
 interface ScoreEditorProps {
-  measures: Measure[];
+  measures: MeasureData[];
   resolvedLabels: (string | number)[];
   resolvedTempoMap: ResolvedMeasure[];
   currentMeasure: number | null;
-  onUpdateMeasure: (index: number, updated: Measure) => void;
+  onUpdateMeasure: (index: number, updated: MeasureData) => void;
   onDeleteMeasure: (index: number) => void;
   onInsertAfter: (index: number) => void;
   onAddMeasure: () => void;
@@ -29,7 +29,7 @@ export function ScoreEditor({
       <div className="score-editor__scroll-container">
         <StaffClef />
         {measures.map((measure, index) => (
-          <MeasureCard
+          <Measure
             key={index}
             measure={measure}
             resolvedLabel={resolvedLabels[index]}
