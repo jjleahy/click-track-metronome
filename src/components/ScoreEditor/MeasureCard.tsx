@@ -14,6 +14,45 @@ interface MeasureCardProps {
   onInsertAfter: () => void;
 }
 
+// Returns the duration of the first big beat as a fraction of a whole note.
+// e.g. denominator=8, firstSubdivision=3 → 3/8
+function firstBeatDuration(denominator: number, firstSubdivision: number): number {
+  return firstSubdivision / denominator;
+}
+
+// Converts internal quarter-note tempo to display tempo for the first beat.
+// displayTempo = internalTempo * (1/4) / firstBeatDur
+function toDisplayTempo(internalTempo: number, denominator: number, firstSubdivision: number): number {
+  const beatDur = firstBeatDuration(denominator, firstSubdivision);
+  return Math.round(internalTempo * 0.25 / beatDur);
+}
+
+// Converts display tempo back to internal quarter-note tempo (round half up).
+function toInternalTempo(displayTempo: number, denominator: number, firstSubdivision: number): number {
+  const beatDur = firstBeatDuration(denominator, firstSubdivision);
+  const raw = displayTempo * beatDur / 0.25;
+  return Math.floor(raw + 0.5);
+}
+
+// Builds a text label like "q = ", "e• = ", "h = " for the first beat.
+function beatLabel(denominator: number, firstSubdivision: number): string {
+  // Duration of first beat relative to a whole note
+  const beatDur = firstBeatDuration(denominator, firstSubdivision);
+  // Map common durations to symbols
+  const map: [number, string][] = [
+    [1 / 2, 'h'],
+    [3 / 8, 'q•'],
+    [1 / 4, 'q'],
+    [3 / 16, 'e•'],
+    [1 / 8, 'e'],
+  ];
+  for (const [dur, label] of map) {
+    if (Math.abs(beatDur - dur) < 1e-9) return label + ' = ';
+  }
+  // Fallback: show as fraction
+  return `${firstSubdivision}/${denominator} = `;
+}
+
 export function MeasureCard({
   measure,
   resolvedLabel,
@@ -24,14 +63,45 @@ export function MeasureCard({
   onDelete,
   onInsertAfter,
 }: MeasureCardProps) {
+  const denominator = measure.meter[1];
+  const firstSubdivision = measure.beats.length > 0 ? measure.beats[0].subdivisions : 1;
+
+  const displayResolvedTempo = toDisplayTempo(resolvedTempo, denominator, firstSubdivision);
+
   const [tempoInputStr, setTempoInputStr] = useState(
-    measure.tempo !== null ? String(measure.tempo) : ''
+    measure.tempo !== null ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision)) : ''
   );
 
-  // Sync tempo input when the resolved value changes externally
+  // Sync tempo input when the measure changes externally
   useEffect(() => {
-    setTempoInputStr(measure.tempo !== null ? String(measure.tempo) : '');
-  }, [measure.tempo]);
+    setTempoInputStr(
+      measure.tempo !== null
+        ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision))
+        : ''
+    );
+  }, [measure.tempo, denominator, firstSubdivision]);
+
+  const [labelInputStr, setLabelInputStr] = useState(
+    measure.rehearsalNumber !== null ? String(measure.rehearsalNumber) : ''
+  );
+
+  // Sync label input when the measure changes externally
+  useEffect(() => {
+    setLabelInputStr(
+      measure.rehearsalNumber !== null ? String(measure.rehearsalNumber) : ''
+    );
+  }, [measure.rehearsalNumber]);
+
+  function commitLabel() {
+    const trimmed = labelInputStr.trim();
+    if (trimmed === '') {
+      onChange({ ...measure, rehearsalNumber: null });
+    } else {
+      const asNum = Number(trimmed);
+      const resolved: string | number = Number.isInteger(asNum) && String(asNum) === trimmed ? asNum : trimmed;
+      onChange({ ...measure, rehearsalNumber: resolved });
+    }
+  }
 
   const isValid = isMeasureValid(measure.beats, measure.meter[0]);
 
@@ -39,12 +109,25 @@ export function MeasureCard({
     if (tempoInputStr === '') {
       onChange({ ...measure, tempo: null });
     } else {
-      const parsed = parseInt(tempoInputStr, 10);
-      if (!isNaN(parsed) && parsed >= 20 && parsed <= 300) {
-        onChange({ ...measure, tempo: parsed });
+      const parsedDisplay = parseInt(tempoInputStr, 10);
+      if (!isNaN(parsedDisplay) && parsedDisplay >= 1) {
+        const internal = toInternalTempo(parsedDisplay, denominator, firstSubdivision);
+        if (internal >= 20 && internal <= 300) {
+          onChange({ ...measure, tempo: internal });
+        } else {
+          // Revert to current display value
+          setTempoInputStr(
+            measure.tempo !== null
+              ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision))
+              : ''
+          );
+        }
       } else {
-        // Revert to current measure tempo
-        setTempoInputStr(measure.tempo !== null ? String(measure.tempo) : '');
+        setTempoInputStr(
+          measure.tempo !== null
+            ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision))
+            : ''
+        );
       }
     }
   }
@@ -87,13 +170,13 @@ export function MeasureCard({
     <div className={cardClass}>
       {/* Row 1: Tempo */}
       <div>
-        <label htmlFor={`tempo-${resolvedLabel}`}>♩ =</label>{' '}
+        <label htmlFor={`tempo-${resolvedLabel}`}>{beatLabel(denominator, firstSubdivision)}</label>{' '}
         <input
           id={`tempo-${resolvedLabel}`}
           type="number"
-          min={20}
-          max={300}
-          placeholder={String(resolvedTempo)}
+          min={1}
+          max={999}
+          placeholder={String(displayResolvedTempo)}
           value={tempoInputStr}
           onChange={(e) => setTempoInputStr(e.target.value)}
           onBlur={commitTempo}
@@ -104,7 +187,17 @@ export function MeasureCard({
 
       {/* Row 2: Label + controls */}
       <div>
-        <span>m. {resolvedLabel}</span>{' '}
+        <label htmlFor={`label-${resolvedLabel}`}>m.</label>{' '}
+        <input
+          id={`label-${resolvedLabel}`}
+          type="text"
+          placeholder={String(resolvedLabel)}
+          value={labelInputStr}
+          onChange={(e) => setLabelInputStr(e.target.value)}
+          onBlur={commitLabel}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitLabel(); }}
+          aria-label="Measure label"
+        />{' '}
         <button
           onClick={onDelete}
           disabled={!canDelete}
