@@ -17,70 +17,67 @@
   gap: 2rem;
 }
 
-/* Score placeholder */
-.score-placeholder {
+/* Score editor */
+.score-editor {
   border: 1px solid #444;
   border-radius: 6px;
   padding: 1rem;
 }
 
-.stage-label {
-  margin: 0 0 1rem;
-  font-size: 0.8rem;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.measure-grid {
+.score-editor__scroll-container {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  align-items: flex-start;
 }
 
-.measure-cell {
+.measure-card {
+  flex: 0 0 auto;
+  min-width: 130px;
   border: 2px solid #444;
-  border-radius: 4px;
-  padding: 0.75rem;
-  min-width: 90px;
-  text-align: center;
-  transition: border-color 0.1s, background-color 0.1s;
+  border-radius: 6px;
+  padding: 0.75rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
 }
 
-.measure-cell.active {
+.measure-card--invalid {
+  border-color: #c0392b;
+  background-color: rgba(192, 57, 43, 0.08);
+}
+
+.measure-card--active {
   border-color: #646cff;
   background-color: rgba(100, 108, 255, 0.1);
 }
 
-.measure-number {
-  font-size: 0.75rem;
-  color: #888;
-  margin-bottom: 0.25rem;
+.measure-card input[type="number"] {
+  width: 4rem;
 }
 
-.meter {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.beats {
+.subdivision-inputs {
   display: flex;
-  gap: 0.4rem;
-  justify-content: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
 }
 
-.beat-dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #555;
-  transition: background-color 0.05s;
+.subdivision-inputs input[type="number"] {
+  width: 2.5rem;
 }
 
-.beat-dot.beat-active {
-  background: #646cff;
+.score-editor__add-button {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 0.5rem 1rem;
+  border: 2px dashed #444;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
 /* Metronome panel */
@@ -91,11 +88,7 @@
   padding: 1rem;
   border: 1px solid #444;
   border-radius: 6px;
-}
-
-.tempo-display {
-  font-size: 1.1rem;
-  min-width: 120px;
+  flex-wrap: wrap;
 }
 
 .play-button {
@@ -109,12 +102,18 @@
   transition: background-color 0.15s;
 }
 
-.play-button:hover {
+.play-button:hover:not(:disabled) {
   background: rgba(100, 108, 255, 0.15);
 }
 
 .play-button.playing {
   background: rgba(100, 108, 255, 0.25);
+}
+
+.play-button:disabled {
+  border-color: #555;
+  color: #666;
+  cursor: not-allowed;
 }
 
 /* Footer */

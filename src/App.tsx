@@ -1,33 +1,77 @@
-// TODO (Stage 2+): Replace this entire file with a proper component tree.
-// Real components live in:
-//   src/components/ScoreEditor/  — staff display, measure/beat editing, tempo controls
-//   src/components/Metronome/    — playback controls, linked tempo/percentage inputs
-// App.tsx will become a thin shell that composes those components and owns top-level state.
-
-import { useState } from 'react';
-import type { Exercise } from './models/Exercise';
+import { useState, useEffect } from 'react';
+import type { Exercise, Measure } from './models/Exercise';
 import { useMetronome } from './hooks/useMetronome';
+import { resolveTempoMap } from './utils/tempoMap';
+import { resolveMeasureLabels } from './utils/measureLabels';
+import { defaultBeats } from './utils/subdivisionDefaults';
+import { isMeasureValid } from './utils/subdivisionValidation';
+import { ScoreEditor } from './components/ScoreEditor/ScoreEditor';
+import { Metronome } from './components/Metronome/Metronome';
 import './App.css';
 
-// TODO (Stage 2+): Replace hard-coded state with editable exercise state and localStorage persistence.
 const INITIAL_EXERCISE: Exercise = {
-  id: 'stage-1-default',
+  id: 'stage-2-default',
   name: 'Default Exercise',
   measures: [
-    { meter: [4, 4], beats: [{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null}], tempo: 80, rehearsalNumber: null, gradualTempo: null },
-    { meter: [4, 4], beats: [{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null}], tempo: null, rehearsalNumber: null, gradualTempo: null },
-    { meter: [4, 4], beats: [{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null}], tempo: null, rehearsalNumber: null, gradualTempo: null },
-    { meter: [4, 4], beats: [{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null},{subdivisions:1,hold:null}], tempo: null, rehearsalNumber: null, gradualTempo: null },
+    { meter: [4, 4], beats: defaultBeats(4, 4), tempo: 80, rehearsalNumber: null, gradualTempo: null },
+    { meter: [4, 4], beats: defaultBeats(4, 4), tempo: null, rehearsalNumber: null, gradualTempo: null },
+    { meter: [4, 4], beats: defaultBeats(4, 4), tempo: null, rehearsalNumber: null, gradualTempo: null },
+    { meter: [4, 4], beats: defaultBeats(4, 4), tempo: null, rehearsalNumber: null, gradualTempo: null },
   ],
 };
 
 export default function App() {
-  const [exercise] = useState<Exercise>(INITIAL_EXERCISE);
-  const [startMeasureIndex] = useState(0);
-  const [percentage] = useState(100);
+  const [exercise, setExercise] = useState<Exercise>(INITIAL_EXERCISE);
+  const [startMeasureIndex, setStartMeasureIndex] = useState(0);
+  const percentage = 100;
 
-  // TODO (Stage 2+): wire startMeasureIndex, percentage, and endMeasureIndex to editable inputs
-  const { isPlaying, currentMeasure, currentBeat, toggle } = useMetronome({
+  const resolvedTempoMap = resolveTempoMap(exercise.measures);
+  const resolvedLabels = resolveMeasureLabels(exercise.measures);
+  const hasInvalidMeasure = exercise.measures.some(
+    (m) => !isMeasureValid(m.beats, m.meter[0])
+  );
+
+  // Clamp startMeasureIndex when measures are deleted
+  useEffect(() => {
+    if (startMeasureIndex >= exercise.measures.length) {
+      setStartMeasureIndex(Math.max(0, exercise.measures.length - 1));
+    }
+  }, [exercise.measures.length, startMeasureIndex]);
+
+  function setMeasures(newMeasures: Measure[]) {
+    setExercise((prev) => ({ ...prev, measures: newMeasures }));
+  }
+
+  function handleUpdateMeasure(index: number, updated: Measure) {
+    setMeasures(exercise.measures.map((m, i) => (i === index ? updated : m)));
+  }
+
+  function handleDeleteMeasure(index: number) {
+    setMeasures(exercise.measures.filter((_, i) => i !== index));
+  }
+
+  function handleInsertAfter(index: number) {
+    const source = exercise.measures[index];
+    const newMeasure: Measure = {
+      ...source,
+      beats: source.beats.map((b) => ({ ...b })),
+    };
+    setMeasures([
+      ...exercise.measures.slice(0, index + 1),
+      newMeasure,
+      ...exercise.measures.slice(index + 1),
+    ]);
+  }
+
+  function handleAddMeasure() {
+    handleInsertAfter(exercise.measures.length - 1);
+  }
+
+  function handleSetMeasureTempo(index: number, tempo: number | null) {
+    handleUpdateMeasure(index, { ...exercise.measures[index], tempo });
+  }
+
+  const { isPlaying, currentMeasure, toggle } = useMetronome({
     measures: exercise.measures,
     startMeasureIndex,
     percentage,
@@ -37,48 +81,31 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        {/* TODO (Stage 3): Replace with proper app chrome / exercise name display */}
         <h1>Click Track Metronome</h1>
       </header>
 
       <main className="app-main">
-        {/* TODO (Stage 2+): Replace with <ScoreEditor> component */}
-        <section className="score-placeholder">
-          <p className="stage-label">Stage 1 — Working Metronome (placeholder UI)</p>
-          <div className="measure-grid">
-            {exercise.measures.map((m, mi) => (
-              <div
-                key={mi}
-                className={`measure-cell ${currentMeasure === mi ? 'active' : ''}`}
-              >
-                <div className="measure-number">m. {mi + 1}</div>
-                <div className="meter">{m.meter[0]}/{m.meter[1]}</div>
-                <div className="beats">
-                  {m.beats.map((_, bi) => (
-                    <span
-                      key={bi}
-                      className={`beat-dot ${currentMeasure === mi && currentBeat === bi ? 'beat-active' : ''}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <ScoreEditor
+          measures={exercise.measures}
+          resolvedLabels={resolvedLabels}
+          resolvedTempoMap={resolvedTempoMap}
+          currentMeasure={currentMeasure}
+          onUpdateMeasure={handleUpdateMeasure}
+          onDeleteMeasure={handleDeleteMeasure}
+          onInsertAfter={handleInsertAfter}
+          onAddMeasure={handleAddMeasure}
+        />
 
-        {/* TODO (Stage 2+): Replace with <Metronome> component with linked tempo/percentage/startMeasure inputs */}
-        <section className="metronome-panel">
-          <div className="tempo-display">
-            ♩ = {exercise.measures[0].tempo ?? 80} &nbsp;|&nbsp; {percentage}%
-          </div>
-          <button
-            className={`play-button ${isPlaying ? 'playing' : ''}`}
-            onClick={toggle}
-            aria-label={isPlaying ? 'Stop metronome' : 'Start metronome'}
-          >
-            {isPlaying ? '■ Stop' : '▶ Start'}
-          </button>
-        </section>
+        <Metronome
+          resolvedTempoMap={resolvedTempoMap}
+          resolvedLabels={resolvedLabels}
+          startMeasureIndex={startMeasureIndex}
+          onStartMeasureChange={setStartMeasureIndex}
+          isPlaying={isPlaying}
+          onToggle={toggle}
+          hasInvalidMeasure={hasInvalidMeasure}
+          onSetMeasureTempo={handleSetMeasureTempo}
+        />
       </main>
 
       <footer className="app-footer">
