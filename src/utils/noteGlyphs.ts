@@ -133,6 +133,34 @@ export function noteWidthForType(noteType: NoteType): number {
 }
 
 // ---------------------------------------------------------------------------
+// Note x-position computation
+// ---------------------------------------------------------------------------
+
+export interface NotePosition {
+  x: number;
+  noteType: NoteType;
+  subdivisions: number;
+}
+
+/**
+ * Compute the x-position and note type for each beat in a measure.
+ *
+ * Positions start after the time-sig area and advance by each note's width
+ * plus inter-note spacing.
+ */
+export function computeNotePositions(beats: Beat[], denominator: number): NotePosition[] {
+  const positions: NotePosition[] = [];
+  let nx = TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG;
+  for (let i = 0; i < beats.length; i++) {
+    const noteType = noteForBeat(denominator, beats[i].subdivisions);
+    positions.push({ x: nx, noteType, subdivisions: beats[i].subdivisions });
+    nx += noteWidthForType(noteType);
+    if (i < beats.length - 1) nx += NOTE_SPACING;
+  }
+  return positions;
+}
+
+// ---------------------------------------------------------------------------
 // Measure-width computation
 // ---------------------------------------------------------------------------
 

@@ -14,14 +14,11 @@ import {
   LABEL_ROW_TOP,
   TIMESIG_NUM_TOP,
   TIMESIG_DEN_TOP,
-  TIME_SIG_WIDTH,
-  SPACE_AFTER_TIMESIG,
-  NOTE_SPACING,
   BARLINE_WIDTH,
 } from './staffConstants';
 import { BravuraNumberInput } from './BravuraNumberInput';
 import { NoteGlyph } from './NoteGlyph';
-import { noteForBeat, noteWidthForType, computeMeasureWidth } from '../../utils/noteGlyphs';
+import { computeNotePositions, computeMeasureWidth } from '../../utils/noteGlyphs';
 
 interface MeasureProps {
   measure: MeasureData;
@@ -125,16 +122,7 @@ export function Measure({
 
   // Dynamic measure width and note x-positions
   const measureWidth = computeMeasureWidth(measure.beats, denominator);
-  const notePositions: { x: number; noteType: ReturnType<typeof noteForBeat>; subdivisions: number }[] = [];
-  {
-    let nx = TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG;
-    for (let i = 0; i < measure.beats.length; i++) {
-      const nt = noteForBeat(denominator, measure.beats[i].subdivisions);
-      notePositions.push({ x: nx, noteType: nt, subdivisions: measure.beats[i].subdivisions });
-      nx += noteWidthForType(nt);
-      if (i < measure.beats.length - 1) nx += NOTE_SPACING;
-    }
-  }
+  const notePositions = computeNotePositions(measure.beats, denominator);
 
   function commitTempo() {
     if (tempoInputStr === '') {
@@ -310,23 +298,19 @@ export function Measure({
         </button>
       </div>
 
-      {/* Footer: Subdivision inputs */}
-      <div
-        className="subdivision-inputs"
-        style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: 4 }}
-      >
-        {measure.beats.map((beat, bi) => (
-          <input
-            key={bi}
-            type="number"
-            min={1}
-            max={measure.meter[0]}
-            value={beat.subdivisions}
-            onChange={(e) => handleSubdivisionChange(bi, e.target.value)}
-            aria-label={`Beat ${bi + 1} subdivisions`}
-          />
-        ))}
-      </div>
+      {/* Footer: Subdivision inputs — each aligned under its note glyph */}
+      {notePositions.map((np, bi) => (
+        <input
+          key={bi}
+          type="number"
+          min={1}
+          max={measure.meter[0]}
+          value={measure.beats[bi].subdivisions}
+          onChange={(e) => handleSubdivisionChange(bi, e.target.value)}
+          aria-label={`Beat ${bi + 1} subdivisions`}
+          style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: np.x }}
+        />
+      ))}
 
       {/* End-of-measure barline */}
       <div
