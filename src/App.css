@@ -17,6 +17,14 @@
   gap: 2rem;
 }
 
+/* Bravura music font */
+@font-face {
+  font-family: 'Bravura';
+  src: url('/fonts/Bravura.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Score editor */
 .score-editor {
   border: 1px solid #444;

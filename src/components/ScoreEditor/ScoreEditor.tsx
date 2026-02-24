@@ -1,6 +1,7 @@
 import type { Measure } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../utils/tempoMap';
 import { MeasureCard } from './MeasureCard';
+import { StaffClef } from './StaffClef';
 
 interface ScoreEditorProps {
   measures: Measure[];
@@ -26,6 +27,7 @@ export function ScoreEditor({
   return (
     <section className="score-editor" aria-label="Score editor">
       <div className="score-editor__scroll-container">
+        <StaffClef />
         {measures.map((measure, index) => (
           <MeasureCard
             key={index}
