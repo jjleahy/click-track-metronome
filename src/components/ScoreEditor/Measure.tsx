@@ -14,8 +14,14 @@ import {
   LABEL_ROW_TOP,
   TIMESIG_NUM_TOP,
   TIMESIG_DEN_TOP,
+  TIME_SIG_WIDTH,
+  SPACE_AFTER_TIMESIG,
+  NOTE_SPACING,
+  BARLINE_WIDTH,
 } from './staffConstants';
 import { BravuraNumberInput } from './BravuraNumberInput';
+import { NoteGlyph } from './NoteGlyph';
+import { noteForBeat, noteWidthForType, computeMeasureWidth } from '../../utils/noteGlyphs';
 
 interface MeasureProps {
   measure: MeasureData;
@@ -117,6 +123,19 @@ export function Measure({
 
   const isValid = isMeasureValid(measure.beats, measure.meter[0]);
 
+  // Dynamic measure width and note x-positions
+  const measureWidth = computeMeasureWidth(measure.beats, denominator);
+  const notePositions: { x: number; noteType: ReturnType<typeof noteForBeat>; subdivisions: number }[] = [];
+  {
+    let nx = TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG;
+    for (let i = 0; i < measure.beats.length; i++) {
+      const nt = noteForBeat(denominator, measure.beats[i].subdivisions);
+      notePositions.push({ x: nx, noteType: nt, subdivisions: measure.beats[i].subdivisions });
+      nx += noteWidthForType(nt);
+      if (i < measure.beats.length - 1) nx += NOTE_SPACING;
+    }
+  }
+
   function commitTempo() {
     if (tempoInputStr === '') {
       onChange({ ...measure, tempo: null });
@@ -174,14 +193,12 @@ export function Measure({
     .filter(Boolean)
     .join(' ');
 
-  const MIN_WIDTH = STAFF_SPACE * 7; // 140px — rough minimum; beat-proportional width comes later
-
   return (
     <div
       className={measureClass}
       style={{
         position: 'relative',
-        width: MIN_WIDTH,
+        width: measureWidth,
         height: TOTAL_HEIGHT,
         flexShrink: 0,
       }}
@@ -208,7 +225,7 @@ export function Measure({
         min={1}
         max={19}
         ariaLabel="Time signature numerator"
-        style={{ position: 'absolute', top: TIMESIG_NUM_TOP, left: 4 }}
+        style={{ position: 'absolute', top: TIMESIG_NUM_TOP, left: 10 }}
       />
       <BravuraNumberInput
         value={measure.meter[1]}
@@ -217,8 +234,18 @@ export function Measure({
         max={16}
         allowedValues={[1, 2, 4, 8, 16]}
         ariaLabel="Time signature denominator"
-        style={{ position: 'absolute', top: TIMESIG_DEN_TOP, left: 4 }}
+        style={{ position: 'absolute', top: TIMESIG_DEN_TOP, left: 10 }}
       />
+
+      {/* Note glyphs for each beat */}
+      {notePositions.map((np, i) => (
+        <NoteGlyph
+          key={i}
+          noteType={np.noteType}
+          x={np.x}
+          subdivisions={np.subdivisions}
+        />
+      ))}
 
       {/* Row A: accel/rit — placeholder, content TBD */}
       <div
@@ -258,7 +285,7 @@ export function Measure({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: MIN_WIDTH - 8, // account for left: 4 offset on both sides
+        width: measureWidth - 8, // account for left: 4 offset on both sides
       }}>
         <input
           id={`label-${resolvedLabel}`}
@@ -300,6 +327,18 @@ export function Measure({
           />
         ))}
       </div>
+
+      {/* End-of-measure barline */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: HEADER_HEIGHT,
+          width: BARLINE_WIDTH,
+          height: STAFF_HEIGHT,
+          backgroundColor: 'currentColor',
+        }}
+      />
     </div>
   );
 }
