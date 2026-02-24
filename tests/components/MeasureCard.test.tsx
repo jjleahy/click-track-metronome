@@ -53,11 +53,13 @@ describe('Measure', () => {
     expect(container.firstChild).toHaveClass('measure--active');
   });
 
-  it('numerator change resets beats via defaultBeats', () => {
+  it('numerator change resets beats via defaultBeats', async () => {
     const onChange = vi.fn();
     render(<Measure {...defaultProps} measure={make44()} onChange={onChange} />);
-    const numInput = screen.getByRole('spinbutton', { name: /time signature numerator/i });
-    fireEvent.change(numInput, { target: { value: '6' } });
+    const numInput = screen.getByRole('textbox', { name: /time signature numerator/i });
+    await userEvent.click(numInput);
+    await userEvent.keyboard('6');
+    fireEvent.blur(numInput);
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
     expect(lastCall.meter[0]).toBe(6);
     expect(lastCall.beats.reduce((s, b) => s + b.subdivisions, 0)).toBe(6);
@@ -66,8 +68,10 @@ describe('Measure', () => {
   it('denominator change resets beats via defaultBeats', async () => {
     const onChange = vi.fn();
     render(<Measure {...defaultProps} measure={make44()} onChange={onChange} />);
-    const denomSelect = screen.getByRole('combobox', { name: /time signature denominator/i });
-    await userEvent.selectOptions(denomSelect, '8');
+    const denomInput = screen.getByRole('textbox', { name: /time signature denominator/i });
+    await userEvent.click(denomInput);
+    await userEvent.keyboard('8');
+    fireEvent.blur(denomInput);
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
     expect(lastCall.meter[1]).toBe(8);
     expect(lastCall.beats.reduce((s, b) => s + b.subdivisions, 0)).toBe(4);

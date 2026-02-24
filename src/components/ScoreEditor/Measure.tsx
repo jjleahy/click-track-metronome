@@ -12,7 +12,10 @@ import {
   ACCEL_ROW_TOP,
   TEMPO_ROW_TOP,
   LABEL_ROW_TOP,
+  TIMESIG_NUM_TOP,
+  TIMESIG_DEN_TOP,
 } from './staffConstants';
+import { BravuraNumberInput } from './BravuraNumberInput';
 
 interface MeasureProps {
   measure: MeasureData;
@@ -62,8 +65,7 @@ function beatLabel(denominator: number, firstSubdivision: number): string {
 }
 
 // Vertical position for footer-zone rows, relative to component top.
-const TIMESIG_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;       // just below bottom staff line
-const SUBDIV_ROW_TOP  = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE * 3;  // below time sig
+const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just below bottom staff line
 
 export function Measure({
   measure,
@@ -141,9 +143,7 @@ export function Measure({
     }
   }
 
-  function handleNumeratorChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const newNum = parseInt(e.target.value, 10);
-    if (isNaN(newNum) || newNum < 1) return;
+  function handleNumeratorChange(newNum: number) {
     onChange({
       ...measure,
       meter: [newNum, measure.meter[1]],
@@ -151,8 +151,7 @@ export function Measure({
     });
   }
 
-  function handleDenominatorChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const newDenom = parseInt(e.target.value, 10);
+  function handleDenominatorChange(newDenom: number) {
     onChange({
       ...measure,
       meter: [measure.meter[0], newDenom],
@@ -201,6 +200,25 @@ export function Measure({
           }}
         />
       ))}
+
+      {/* Time signature on staff (editable Bravura glyphs) */}
+      <BravuraNumberInput
+        value={measure.meter[0]}
+        onChange={handleNumeratorChange}
+        min={1}
+        max={19}
+        ariaLabel="Time signature numerator"
+        style={{ position: 'absolute', top: TIMESIG_NUM_TOP, left: 4 }}
+      />
+      <BravuraNumberInput
+        value={measure.meter[1]}
+        onChange={handleDenominatorChange}
+        min={1}
+        max={16}
+        allowedValues={[1, 2, 4, 8, 16]}
+        ariaLabel="Time signature denominator"
+        style={{ position: 'absolute', top: TIMESIG_DEN_TOP, left: 4 }}
+      />
 
       {/* Row A: accel/rit — placeholder, content TBD */}
       <div
@@ -263,32 +281,6 @@ export function Measure({
         <button onClick={onInsertAfter} aria-label="Insert measure after">
           +
         </button>
-      </div>
-
-      {/* Footer: Time signature inputs */}
-      <div style={{ position: 'absolute', top: TIMESIG_ROW_TOP, left: 4 }}>
-        <label htmlFor={`num-${resolvedLabel}`}>Beats:</label>{' '}
-        <input
-          id={`num-${resolvedLabel}`}
-          type="number"
-          min={1}
-          max={32}
-          value={measure.meter[0]}
-          onChange={handleNumeratorChange}
-          aria-label="Time signature numerator"
-        />
-        {' / '}
-        <select
-          id={`denom-${resolvedLabel}`}
-          value={measure.meter[1]}
-          onChange={handleDenominatorChange}
-          aria-label="Time signature denominator"
-        >
-          <option value={2}>2</option>
-          <option value={4}>4</option>
-          <option value={8}>8</option>
-          <option value={16}>16</option>
-        </select>
       </div>
 
       {/* Footer: Subdivision inputs */}
