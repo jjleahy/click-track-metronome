@@ -18,7 +18,7 @@ function make44(): MeasureData {
 const defaultProps = {
   resolvedLabel: 1,
   resolvedTempo: 80,
-  isActive: false,
+  activeBeat: null,
   canDelete: true,
   onChange: vi.fn(),
   onDelete: vi.fn(),
@@ -44,13 +44,6 @@ describe('Measure', () => {
     };
     const { container } = render(<Measure {...defaultProps} measure={measure} />);
     expect(container.firstChild).toHaveClass('measure--invalid');
-  });
-
-  it('has active class when isActive', () => {
-    const { container } = render(
-      <Measure {...defaultProps} measure={make44()} isActive={true} />
-    );
-    expect(container.firstChild).toHaveClass('measure--active');
   });
 
   it('numerator change resets beats via defaultBeats', async () => {

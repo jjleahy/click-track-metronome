@@ -44,6 +44,11 @@ export const NOTE_SPACING        = STAFF_SPACE * 1.8;  // 50px — gap between c
 export const SPACE_AFTER_NOTES   = STAFF_SPACE * 1.5;  // 10px — breathing room before barline
 export const BARLINE_WIDTH       = 3;                   // px
 
+// Width of the StaffClef component (treble clef + staff lines, leftmost scroll item).
+// Formula mirrors StaffClef.tsx: left padding + glyph width + right padding.
+// CLEF_H_PADDING = STAFF_SPACE * 0.4, glyph width ≈ STAFF_SPACE * 2.9.
+export const STAFF_CLEF_WIDTH = Math.round(STAFF_SPACE * 0.4 + STAFF_SPACE * 2.9 + STAFF_SPACE * 0.4); // 74px
+
 // Per-note-type glyph widths (approximate, for layout computation)
 export const NOTE_WIDTH_WHOLE    = STAFF_SPACE * 1.6;  // 32px
 export const NOTE_WIDTH_HALF     = STAFF_SPACE * 1.2;  // 24px

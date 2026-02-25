@@ -7,7 +7,9 @@ interface ScoreEditorProps {
   measures: MeasureData[];
   resolvedLabels: (string | number)[];
   resolvedTempoMap: ResolvedMeasure[];
+  isPlaying: boolean;
   currentMeasure: number | null;
+  currentBeat: number | null;
   onUpdateMeasure: (index: number, updated: MeasureData) => void;
   onDeleteMeasure: (index: number) => void;
   onInsertAfter: (index: number) => void;
@@ -19,6 +21,7 @@ export function ScoreEditor({
   resolvedLabels,
   resolvedTempoMap,
   currentMeasure,
+  currentBeat,
   onUpdateMeasure,
   onDeleteMeasure,
   onInsertAfter,
@@ -34,7 +37,7 @@ export function ScoreEditor({
             measure={measure}
             resolvedLabel={resolvedLabels[index]}
             resolvedTempo={resolvedTempoMap[index].tempo}
-            isActive={currentMeasure === index}
+            activeBeat={currentMeasure === index ? currentBeat : null}
             canDelete={measures.length > 1}
             onChange={(updated) => onUpdateMeasure(index, updated)}
             onDelete={() => onDeleteMeasure(index)}

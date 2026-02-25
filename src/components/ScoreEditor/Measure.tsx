@@ -24,7 +24,7 @@ interface MeasureProps {
   measure: MeasureData;
   resolvedLabel: string | number;
   resolvedTempo: number;
-  isActive: boolean;
+  activeBeat: number | null;
   canDelete: boolean;
   onChange: (updated: MeasureData) => void;
   onDelete: () => void;
@@ -74,7 +74,7 @@ export function Measure({
   measure,
   resolvedLabel,
   resolvedTempo,
-  isActive,
+  activeBeat,
   canDelete,
   onChange,
   onDelete,
@@ -175,7 +175,6 @@ export function Measure({
 
   const measureClass = [
     'measure',
-    isActive ? 'measure--active' : '',
     isValid ? '' : 'measure--invalid',
   ]
     .filter(Boolean)
@@ -232,6 +231,7 @@ export function Measure({
           noteType={np.noteType}
           x={np.x}
           subdivisions={np.subdivisions}
+          isActive={activeBeat === i}
         />
       ))}
 

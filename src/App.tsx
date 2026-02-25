@@ -71,11 +71,11 @@ export default function App() {
     handleUpdateMeasure(index, { ...exercise.measures[index], tempo });
   }
 
-  const { isPlaying, currentMeasure, toggle } = useMetronome({
+  const { isPlaying, currentMeasure, currentBeat, toggle } = useMetronome({
     measures: exercise.measures,
     startMeasureIndex,
     percentage,
-    loop: true,
+    loop: false,
   });
 
   return (
@@ -89,7 +89,9 @@ export default function App() {
           measures={exercise.measures}
           resolvedLabels={resolvedLabels}
           resolvedTempoMap={resolvedTempoMap}
+          isPlaying={isPlaying}
           currentMeasure={currentMeasure}
+          currentBeat={currentBeat}
           onUpdateMeasure={handleUpdateMeasure}
           onDeleteMeasure={handleDeleteMeasure}
           onInsertAfter={handleInsertAfter}

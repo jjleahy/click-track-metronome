@@ -18,6 +18,7 @@ import {
   STAFF_LINES,
   STAFF_SPACE,
   STAFF_LINE_HEIGHT,
+  STAFF_CLEF_WIDTH,
   TOTAL_HEIGHT,
 } from './staffConstants';
 
@@ -31,10 +32,6 @@ const CLEF_FONT_SIZE = STAFF_SPACE * 4.3;
 // Horizontal padding on each side of the clef glyph.
 // Ratio 0.4 gives ~8px at STAFF_SPACE=20, which fits left margin and right breathing room.
 const CLEF_H_PADDING = STAFF_SPACE * 0.4;
-
-// Bravura's treble clef glyph width ≈ 2.9× STAFF_SPACE at this font-size ratio.
-// Total component width = left padding + glyph width + right padding.
-const COMPONENT_WIDTH = Math.round(CLEF_H_PADDING + STAFF_SPACE * 2.9 + CLEF_H_PADDING); // ~74px at STAFF_SPACE=20
 
 // The top pixel of Bravura's treble clef glyph aligns with the second staff
 // line (one STAFF_SPACE below HEADER_HEIGHT), minus 2px for the glyph's internal
@@ -53,7 +50,7 @@ export function StaffClef() {
       className="staff-clef"
       style={{
         position: 'relative',
-        width: COMPONENT_WIDTH,
+        width: STAFF_CLEF_WIDTH,
         height: TOTAL_HEIGHT,
         flexShrink: 0,
       }}

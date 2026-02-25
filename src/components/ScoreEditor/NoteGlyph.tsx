@@ -17,6 +17,7 @@ interface NoteGlyphProps {
   noteType: NoteType;
   x: number;
   subdivisions: number; // shown for fallback display
+  isActive?: boolean;
 }
 
 // Note center on staff line 3 (G4 — 2nd line from bottom)
@@ -59,7 +60,9 @@ function flagGlyph(noteType: NoteType): string | null {
   }
 }
 
-export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
+const HIGHLIGHT_COLOR = '#646cff';
+
+export function NoteGlyph({ noteType, x, subdivisions, isActive }: NoteGlyphProps) {
   if (noteType === 'fallback') {
     return (
       <span
@@ -68,7 +71,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
           left: x,
           top: NOTE_Y - 30,
           fontSize: '0.75rem',
-          color: '#888',
+          color: isActive ? HIGHLIGHT_COLOR : '#888',
         }}
       >
         {subdivisions}
@@ -80,6 +83,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
   const isDotted = noteType.startsWith('dotted-');
   const stemTop = NOTE_Y - STEM_HEIGHT - 4;
   const flag = flagGlyph(noteType);
+  const glyphColor = isActive ? HIGHLIGHT_COLOR : undefined;
 
   return (
     <>
@@ -92,6 +96,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
           fontFamily: 'Bravura',
           fontSize: NOTE_FONT_SIZE,
           lineHeight: 0,
+          color: glyphColor,
         }}
       >
         {noteheadGlyph(noteType)}
@@ -106,7 +111,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
             top: stemTop,
             width: STEM_WIDTH,
             height: STEM_HEIGHT,
-            backgroundColor: 'currentColor',
+            backgroundColor: glyphColor ?? 'currentColor',
           }}
         />
       )}
@@ -121,6 +126,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
             fontFamily: 'Bravura',
             fontSize: NOTE_FONT_SIZE,
             lineHeight: 0,
+            color: glyphColor,
           }}
         >
           {flag}
@@ -137,6 +143,7 @@ export function NoteGlyph({ noteType, x, subdivisions }: NoteGlyphProps) {
             fontFamily: 'Bravura',
             fontSize: NOTE_FONT_SIZE,
             lineHeight: 0,
+            color: glyphColor,
           }}
         >
           {AUG_DOT}
