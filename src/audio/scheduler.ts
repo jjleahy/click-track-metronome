@@ -1,5 +1,4 @@
-import type { Measure } from '../models/Exercise';
-import { resolveTempoMap } from '../utils/tempoMap';
+import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 
 export interface ClickEvent {
   time: number;       // AudioContext time in seconds
@@ -7,7 +6,7 @@ export interface ClickEvent {
 }
 
 interface SchedulerOptions {
-  measures: Measure[];
+  resolvedMeasures: ResolvedMeasure[];
   startMeasureIndex: number;
   endMeasureIndex: number | null; // null = play to end of measures array
   loop: boolean;
@@ -19,7 +18,7 @@ interface SchedulerOptions {
 
 export class MetronomeScheduler {
   private audioCtx: AudioContext;
-  private measures: Measure[];
+  private resolvedMeasures: ResolvedMeasure[];
   private startMeasureIndex: number;
   private endMeasureIndex: number; // resolved: last measure index that plays
   private loop: boolean;
@@ -37,9 +36,9 @@ export class MetronomeScheduler {
 
   constructor(opts: SchedulerOptions) {
     this.audioCtx = opts.audioCtx;
-    this.measures = opts.measures;
+    this.resolvedMeasures = opts.resolvedMeasures;
     this.startMeasureIndex = opts.startMeasureIndex;
-    this.endMeasureIndex = opts.endMeasureIndex ?? opts.measures.length - 1;
+    this.endMeasureIndex = opts.endMeasureIndex ?? opts.resolvedMeasures.length - 1;
     this.loop = opts.loop;
     this.percentage = opts.percentage;
     this.onBeat = opts.onBeat;
@@ -77,25 +76,16 @@ export class MetronomeScheduler {
 
   /** Advances position by one beat. Returns false when playback should end. */
   private advance(): boolean {
-    const measure = this.measures[this.currentMeasureIndex];
-    if (!measure) return false;
+    const rm = this.resolvedMeasures[this.currentMeasureIndex];
+    if (!rm) return false;
 
-    const tempoMap = resolveTempoMap(this.measures);
-    const resolved = tempoMap[this.currentMeasureIndex];
-    const [, denominator] = measure.meter;
-    const beat = measure.beats[this.currentBeatIndex];
-
-    // Beat duration in seconds: (subdivisions / denominator) * (60 / quarterTempo)
-    // For x/4: each subdivision unit = one quarter; duration = (subdivisions * 60) / tempo
-    // For x/8: each subdivision unit = one eighth = half a quarter
-    const quarterDuration = 60 / resolved.tempo / (this.percentage / 100);
-    const subdivisionDuration = quarterDuration * (4 / denominator);
-    const beatDuration = beat.subdivisions * subdivisionDuration;
+    const rb = rm.beats[this.currentBeatIndex];
+    const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
 
     this.nextClickTime += beatDuration;
     this.currentBeatIndex++;
 
-    if (this.currentBeatIndex >= measure.beats.length) {
+    if (this.currentBeatIndex >= rm.source.beats.length) {
       this.currentBeatIndex = 0;
 
       if (this.currentMeasureIndex >= this.endMeasureIndex) {

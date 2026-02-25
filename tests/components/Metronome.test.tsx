@@ -2,15 +2,32 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Metronome } from '../../src/components/Metronome/Metronome';
-import type { ResolvedMeasure } from '../../src/utils/tempoMap';
+import type { ResolvedMeasure } from '../../src/models/ResolvedMeasure';
+import { defaultBeats } from '../../src/utils/subdivisionDefaults';
+import { resolveExercise } from '../../src/utils/resolveExercise';
+import type { Measure } from '../../src/models/Exercise';
 
-function makeTempoMap(tempos: number[]): ResolvedMeasure[] {
-  return tempos.map((tempo, index) => ({ index, tempo, meter: [4, 4] as [number, number] }));
+function makeResolved(tempos: number[]): ResolvedMeasure[] {
+  const measures: Measure[] = tempos.map((tempo, i) => ({
+    meter: [4, 4] as [number, number],
+    beats: defaultBeats(4, 4),
+    tempo: i === 0 ? tempo : (tempo === tempos[0] ? null : tempo),
+    rehearsalNumber: null,
+    gradualTempo: null,
+  }));
+  // For simplicity, give each an explicit tempo so resolved values match
+  const measuresExplicit: Measure[] = tempos.map((tempo) => ({
+    meter: [4, 4] as [number, number],
+    beats: defaultBeats(4, 4),
+    tempo,
+    rehearsalNumber: null,
+    gradualTempo: null,
+  }));
+  return resolveExercise(measuresExplicit);
 }
 
 const defaultProps = {
-  resolvedTempoMap: makeTempoMap([80, 80, 80]),
-  resolvedLabels: [1, 2, 3],
+  resolvedMeasures: makeResolved([80, 80, 80]),
   startMeasureIndex: 0,
   onStartMeasureChange: vi.fn(),
   isPlaying: false,
@@ -31,7 +48,7 @@ describe('Metronome', () => {
     render(
       <Metronome
         {...defaultProps}
-        resolvedTempoMap={makeTempoMap([120, 80, 80])}
+        resolvedMeasures={makeResolved([120, 80, 80])}
         startMeasureIndex={0}
       />
     );

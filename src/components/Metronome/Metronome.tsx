@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { ResolvedMeasure } from '../../utils/tempoMap';
+import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 
 interface MetronomeProps {
-  resolvedTempoMap: ResolvedMeasure[];
-  resolvedLabels: (string | number)[];
+  resolvedMeasures: ResolvedMeasure[];
   startMeasureIndex: number;
   onStartMeasureChange: (index: number) => void;
   isPlaying: boolean;
@@ -13,8 +12,7 @@ interface MetronomeProps {
 }
 
 export function Metronome({
-  resolvedTempoMap,
-  resolvedLabels,
+  resolvedMeasures,
   startMeasureIndex,
   onStartMeasureChange,
   isPlaying,
@@ -22,7 +20,7 @@ export function Metronome({
   hasInvalidMeasure,
   onSetMeasureTempo,
 }: MetronomeProps) {
-  const resolvedTempo = resolvedTempoMap[startMeasureIndex]?.tempo ?? 80;
+  const resolvedTempo = resolvedMeasures[startMeasureIndex]?.tempo ?? 80;
   const [tempoInputStr, setTempoInputStr] = useState(String(resolvedTempo));
 
   // Sync tempo display when starting measure or its tempo changes
@@ -49,9 +47,9 @@ export function Metronome({
           onChange={(e) => onStartMeasureChange(Number(e.target.value))}
           disabled={isPlaying}
         >
-          {resolvedLabels.map((label, i) => (
-            <option key={i} value={i}>
-              m. {label}
+          {resolvedMeasures.map((rm) => (
+            <option key={rm.index} value={rm.index}>
+              m. {rm.label}
             </option>
           ))}
         </select>

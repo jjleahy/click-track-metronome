@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Exercise, Measure } from './models/Exercise';
 import { useMetronome } from './hooks/useMetronome';
-import { resolveTempoMap } from './utils/tempoMap';
-import { resolveMeasureLabels } from './utils/measureLabels';
+import { resolveExercise } from './utils/resolveExercise';
 import { defaultBeats } from './utils/subdivisionDefaults';
 import { isMeasureValid } from './utils/subdivisionValidation';
 import { ScoreEditor } from './components/ScoreEditor/ScoreEditor';
@@ -25,8 +24,10 @@ export default function App() {
   const [startMeasureIndex, setStartMeasureIndex] = useState(0);
   const percentage = 100;
 
-  const resolvedTempoMap = resolveTempoMap(exercise.measures);
-  const resolvedLabels = resolveMeasureLabels(exercise.measures);
+  const resolvedMeasures = useMemo(
+    () => resolveExercise(exercise.measures),
+    [exercise.measures]
+  );
   const hasInvalidMeasure = exercise.measures.some(
     (m) => !isMeasureValid(m.beats, m.meter[0])
   );
@@ -72,7 +73,7 @@ export default function App() {
   }
 
   const { isPlaying, currentMeasure, currentBeat, toggle } = useMetronome({
-    measures: exercise.measures,
+    resolvedMeasures,
     startMeasureIndex,
     percentage,
     loop: false,
@@ -86,9 +87,7 @@ export default function App() {
 
       <main className="app-main">
         <ScoreEditor
-          measures={exercise.measures}
-          resolvedLabels={resolvedLabels}
-          resolvedTempoMap={resolvedTempoMap}
+          resolvedMeasures={resolvedMeasures}
           isPlaying={isPlaying}
           currentMeasure={currentMeasure}
           currentBeat={currentBeat}
@@ -99,8 +98,7 @@ export default function App() {
         />
 
         <Metronome
-          resolvedTempoMap={resolvedTempoMap}
-          resolvedLabels={resolvedLabels}
+          resolvedMeasures={resolvedMeasures}
           startMeasureIndex={startMeasureIndex}
           onStartMeasureChange={setStartMeasureIndex}
           isPlaying={isPlaying}

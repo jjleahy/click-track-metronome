@@ -1,9 +1,9 @@
 import { useRef, useState, useCallback } from 'react';
-import type { Measure } from '../models/Exercise';
+import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import { MetronomeScheduler } from '../audio/scheduler';
 
 interface UseMetronomeOptions {
-  measures: Measure[];
+  resolvedMeasures: ResolvedMeasure[];
   startMeasureIndex: number;
   endMeasureIndex?: number | null; // null/undefined = play to end of measures array
   loop?: boolean;                  // default false
@@ -11,7 +11,7 @@ interface UseMetronomeOptions {
 }
 
 export function useMetronome({
-  measures,
+  resolvedMeasures,
   startMeasureIndex,
   endMeasureIndex = null,
   loop = false,
@@ -42,7 +42,7 @@ export function useMetronome({
     }
 
     schedulerRef.current = new MetronomeScheduler({
-      measures,
+      resolvedMeasures,
       startMeasureIndex,
       endMeasureIndex,
       loop,
@@ -61,7 +61,7 @@ export function useMetronome({
     });
     schedulerRef.current.start();
     setIsPlaying(true);
-  }, [measures, startMeasureIndex, endMeasureIndex, loop, percentage, stop]);
+  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, percentage, stop]);
 
   const toggle = useCallback(() => {
     if (isPlaying) stop();

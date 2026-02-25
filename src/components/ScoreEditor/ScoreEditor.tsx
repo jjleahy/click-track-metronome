@@ -1,12 +1,10 @@
 import type { Measure as MeasureData } from '../../models/Exercise';
-import type { ResolvedMeasure } from '../../utils/tempoMap';
+import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { Measure } from './Measure';
 import { StaffClef } from './StaffClef';
 
 interface ScoreEditorProps {
-  measures: MeasureData[];
-  resolvedLabels: (string | number)[];
-  resolvedTempoMap: ResolvedMeasure[];
+  resolvedMeasures: ResolvedMeasure[];
   isPlaying: boolean;
   currentMeasure: number | null;
   currentBeat: number | null;
@@ -17,9 +15,7 @@ interface ScoreEditorProps {
 }
 
 export function ScoreEditor({
-  measures,
-  resolvedLabels,
-  resolvedTempoMap,
+  resolvedMeasures,
   currentMeasure,
   currentBeat,
   onUpdateMeasure,
@@ -31,17 +27,15 @@ export function ScoreEditor({
     <section className="score-editor" aria-label="Score editor">
       <div className="score-editor__scroll-container">
         <StaffClef />
-        {measures.map((measure, index) => (
+        {resolvedMeasures.map((rm) => (
           <Measure
-            key={index}
-            measure={measure}
-            resolvedLabel={resolvedLabels[index]}
-            resolvedTempo={resolvedTempoMap[index].tempo}
-            activeBeat={currentMeasure === index ? currentBeat : null}
-            canDelete={measures.length > 1}
-            onChange={(updated) => onUpdateMeasure(index, updated)}
-            onDelete={() => onDeleteMeasure(index)}
-            onInsertAfter={() => onInsertAfter(index)}
+            key={rm.index}
+            resolved={rm}
+            activeBeat={currentMeasure === rm.index ? currentBeat : null}
+            canDelete={resolvedMeasures.length > 1}
+            onChange={(updated) => onUpdateMeasure(rm.index, updated)}
+            onDelete={() => onDeleteMeasure(rm.index)}
+            onInsertAfter={() => onInsertAfter(rm.index)}
           />
         ))}
         <button

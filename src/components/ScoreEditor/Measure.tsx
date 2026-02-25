@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Measure as MeasureData } from '../../models/Exercise';
+import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { defaultBeats } from '../../utils/subdivisionDefaults';
 import { isMeasureValid, applySubdivisionChange } from '../../utils/subdivisionValidation';
 import {
@@ -18,12 +19,9 @@ import {
 } from './staffConstants';
 import { BravuraNumberInput } from './BravuraNumberInput';
 import { NoteGlyph } from './NoteGlyph';
-import { computeNotePositions, computeMeasureWidth } from '../../utils/noteGlyphs';
 
 interface MeasureProps {
-  measure: MeasureData;
-  resolvedLabel: string | number;
-  resolvedTempo: number;
+  resolved: ResolvedMeasure;
   activeBeat: number | null;
   canDelete: boolean;
   onChange: (updated: MeasureData) => void;
@@ -71,19 +69,18 @@ function beatLabel(denominator: number, firstSubdivision: number): string {
 const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just below bottom staff line
 
 export function Measure({
-  measure,
-  resolvedLabel,
-  resolvedTempo,
+  resolved,
   activeBeat,
   canDelete,
   onChange,
   onDelete,
   onInsertAfter,
 }: MeasureProps) {
-  const denominator = measure.meter[1];
+  const measure = resolved.source;
+  const denominator = resolved.meter[1];
   const firstSubdivision = measure.beats.length > 0 ? measure.beats[0].subdivisions : 1;
 
-  const displayResolvedTempo = toDisplayTempo(resolvedTempo, denominator, firstSubdivision);
+  const displayResolvedTempo = toDisplayTempo(resolved.tempo, denominator, firstSubdivision);
 
   const [tempoInputStr, setTempoInputStr] = useState(
     measure.tempo !== null ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision)) : ''
@@ -113,16 +110,12 @@ export function Measure({
       onChange({ ...measure, rehearsalNumber: null });
     } else {
       const asNum = Number(trimmed);
-      const resolved: string | number = Number.isInteger(asNum) && String(asNum) === trimmed ? asNum : trimmed;
-      onChange({ ...measure, rehearsalNumber: resolved });
+      const resolvedVal: string | number = Number.isInteger(asNum) && String(asNum) === trimmed ? asNum : trimmed;
+      onChange({ ...measure, rehearsalNumber: resolvedVal });
     }
   }
 
   const isValid = isMeasureValid(measure.beats, measure.meter[0]);
-
-  // Dynamic measure width and note x-positions
-  const measureWidth = computeMeasureWidth(measure.beats, denominator);
-  const notePositions = computeNotePositions(measure.beats, denominator);
 
   function commitTempo() {
     if (tempoInputStr === '') {
@@ -185,7 +178,7 @@ export function Measure({
       className={measureClass}
       style={{
         position: 'relative',
-        width: measureWidth,
+        width: resolved.width,
         height: TOTAL_HEIGHT,
         flexShrink: 0,
       }}
@@ -225,12 +218,12 @@ export function Measure({
       />
 
       {/* Note glyphs for each beat */}
-      {notePositions.map((np, i) => (
+      {resolved.beats.map((rb, i) => (
         <NoteGlyph
           key={i}
-          noteType={np.noteType}
-          x={np.x}
-          subdivisions={np.subdivisions}
+          noteType={rb.noteType}
+          x={rb.x}
+          subdivisions={rb.subdivisions}
           isActive={activeBeat === i}
         />
       ))}
@@ -250,9 +243,9 @@ export function Measure({
 
       {/* Row B: Tempo */}
       <div style={{ position: 'absolute', top: TEMPO_ROW_TOP, left: 4 }}>
-        <label htmlFor={`tempo-${resolvedLabel}`}>{beatLabel(denominator, firstSubdivision)}</label>{' '}
+        <label htmlFor={`tempo-${resolved.label}`}>{beatLabel(denominator, firstSubdivision)}</label>{' '}
         <input
-          id={`tempo-${resolvedLabel}`}
+          id={`tempo-${resolved.label}`}
           type="number"
           min={1}
           max={999}
@@ -273,12 +266,12 @@ export function Measure({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: measureWidth - 8, // account for left: 4 offset on both sides
+        width: resolved.width - 8, // account for left: 4 offset on both sides
       }}>
         <input
-          id={`label-${resolvedLabel}`}
+          id={`label-${resolved.label}`}
           type="text"
-          placeholder={String(resolvedLabel)}
+          placeholder={String(resolved.label)}
           value={labelInputStr}
           onChange={(e) => setLabelInputStr(e.target.value)}
           onBlur={commitLabel}
@@ -299,7 +292,7 @@ export function Measure({
       </div>
 
       {/* Footer: Subdivision inputs — each aligned under its note glyph */}
-      {notePositions.map((np, bi) => (
+      {resolved.beats.map((rb, bi) => (
         <input
           key={bi}
           type="number"
@@ -308,7 +301,7 @@ export function Measure({
           value={measure.beats[bi].subdivisions}
           onChange={(e) => handleSubdivisionChange(bi, e.target.value)}
           aria-label={`Beat ${bi + 1} subdivisions`}
-          style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: np.x }}
+          style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: rb.x }}
         />
       ))}
 
