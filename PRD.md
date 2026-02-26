@@ -292,6 +292,13 @@ An exercise can be encoded into a URL for sharing:
 - Can create and switch between exercises
 - Can generate URL params to share exercises (steal from repiano repo?)
 
+### Stage 7: Performance optimization and usage feedback
+- Virtualize off-screen measures in ScoreEditor to reduce DOM nodes during playback
+- Profile and reduce per-beat rendering cost (beat highlighting triggers full measure re-render)
+- Investigate autoscroll jitter — likely caused by DOM re-renders coinciding with rAF frames
+- General performance tuning for large exercises (many measures, fast tempos)
+- Collect usage feedback and address UX rough edges
+
 ---
 
 ## Folder Structure

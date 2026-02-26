@@ -91,6 +91,8 @@ export default function App() {
           isPlaying={isPlaying}
           currentMeasure={currentMeasure}
           currentBeat={currentBeat}
+          percentage={percentage}
+          startMeasureIndex={startMeasureIndex}
           onUpdateMeasure={handleUpdateMeasure}
           onDeleteMeasure={handleDeleteMeasure}
           onInsertAfter={handleInsertAfter}
