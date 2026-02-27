@@ -41,6 +41,7 @@ interface MeasureProps {
 
 // Vertical position for footer-zone rows, relative to component top.
 const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just below bottom staff line
+const HOLD_ROW_TOP = SUBDIV_ROW_TOP + 30;
 
 const ACCEL_COLOR: Record<AccelRitZone['color'], string> = {
   red: '#e74c3c',
@@ -148,6 +149,15 @@ export function Measure({
     const parsed = parseInt(rawValue, 10);
     const newValue = isNaN(parsed) || parsed < 0 ? 0 : parsed;
     const newBeats = applySubdivisionChange(measure.beats, beatIndex, newValue, measure.meter[0]);
+    onChange({ ...measure, beats: newBeats });
+  }
+
+  function handleHoldChange(beatIndex: number, rawValue: string) {
+    const parsed = parseFloat(rawValue);
+    const newHold = isNaN(parsed) ? null : Math.min(9.9, Math.max(0.1, parsed));
+    const newBeats = measure.beats.map((b, i) =>
+      i === beatIndex ? { ...b, hold: newHold } : b
+    );
     onChange({ ...measure, beats: newBeats });
   }
 
@@ -396,6 +406,21 @@ export function Measure({
           onChange={(e) => handleSubdivisionChange(bi, e.target.value)}
           aria-label={`Beat ${bi + 1} subdivisions`}
           style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: rb.x }}
+        />
+      ))}
+
+      {/* Footer: Hold inputs — each aligned under its note glyph */}
+      {resolved.beats.map((rb, bi) => (
+        <input
+          key={bi}
+          type="number"
+          min={0.1}
+          max={9.9}
+          step={0.1}
+          value={measure.beats[bi].hold ?? ''}
+          onChange={(e) => handleHoldChange(bi, e.target.value)}
+          aria-label={`Beat ${bi + 1} hold`}
+          style={{ position: 'absolute', top: HOLD_ROW_TOP, left: rb.x }}
         />
       ))}
 
