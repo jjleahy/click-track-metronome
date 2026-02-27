@@ -114,9 +114,28 @@ export class MetronomeScheduler {
           const subCount = computeSubBeatCount(rb.subdivisions, denominator, this.subdivisionLevel);
           if (subCount !== null && subCount >= 2) {
             const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
-            const subInterval = beatDuration / subCount;
-            for (let i = 1; i < subCount; i++) {
-              this.playSound(this.nextClickTime + i * subInterval, this.soundConfig.subdivision);
+            if (rb.geoRatio !== null) {
+              // Geometric sub-beat distribution: sub-beat i gets a weight proportional
+              // to 1 / subBeatRatio^i, so the duration smoothly follows the tempo curve.
+              const subBeatRatio = Math.pow(rb.geoRatio, 1 / subCount);
+              const weights: number[] = [];
+              let totalWeight = 0;
+              for (let i = 0; i < subCount; i++) {
+                const w = 1 / Math.pow(subBeatRatio, i);
+                weights.push(w);
+                totalWeight += w;
+              }
+              let offsetSec = 0;
+              for (let i = 1; i < subCount; i++) {
+                offsetSec += beatDuration * weights[i - 1] / totalWeight;
+                this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
+              }
+            } else {
+              // Even distribution fallback
+              const subInterval = beatDuration / subCount;
+              for (let i = 1; i < subCount; i++) {
+                this.playSound(this.nextClickTime + i * subInterval, this.soundConfig.subdivision);
+              }
             }
           }
         }

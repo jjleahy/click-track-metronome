@@ -43,6 +43,7 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
         durationMs,
         startMs,
         hold: beat.hold,
+        geoRatio: null,
       };
     });
 
@@ -133,8 +134,10 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
     if (N <= 1) continue;
 
     const ratio = endTempo / startTempo;
+    const perBeatRatio = Math.pow(ratio, 1 / (N - 1));
     for (let k = 0; k < N; k++) {
       const { rb, denominator } = spanBeats[k];
+      rb.geoRatio = perBeatRatio;
       if (rb.hold !== null) continue; // holds override in pass 3b
       const t = k / (N - 1);
       const effectiveTempo = startTempo * Math.pow(ratio, t);

@@ -335,6 +335,48 @@ describe('gradual tempo and hold timing', () => {
     }
   });
 
+  it('geoRatio is null for beats outside any gradual span', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: 100 }),
+    ];
+    const result = resolveExercise(measures);
+    for (const rm of result) {
+      for (const rb of rm.beats) {
+        expect(rb.geoRatio).toBeNull();
+      }
+    }
+  });
+
+  it('geoRatio is populated on all beats within a gradual span', () => {
+    const measures = [
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 1, endTempo: null } }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+    // Span covers measure 0 (4 beats)
+    for (const rb of result[0].beats) {
+      expect(rb.geoRatio).not.toBeNull();
+    }
+    // Arrival measure not in span
+    for (const rb of result[1].beats) {
+      expect(rb.geoRatio).toBeNull();
+    }
+  });
+
+  it('geoRatio value matches ratio^(1/(N-1)) for a known span', () => {
+    // 4/4 at 100→200 BPM over 1 measure: N=4, ratio=2, perBeatRatio = 2^(1/3)
+    const measures = [
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 1, endTempo: null } }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+    const expected = Math.pow(2, 1 / 3);
+    for (const rb of result[0].beats) {
+      expect(rb.geoRatio).toBeCloseTo(expected, 10);
+    }
+  });
+
   it('propagates hold field to ResolvedBeat', () => {
     const measures = [
       makeMeasure({
