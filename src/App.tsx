@@ -6,6 +6,8 @@ import { defaultBeats } from './utils/subdivisionDefaults';
 import { isMeasureValid } from './utils/subdivisionValidation';
 import { ScoreEditor } from './components/ScoreEditor/ScoreEditor';
 import { Metronome } from './components/Metronome/Metronome';
+import { DEFAULT_SOUND_CONFIG } from './models/SoundConfig';
+import type { SoundConfig } from './models/SoundConfig';
 import './App.css';
 
 const INITIAL_EXERCISE: Exercise = {
@@ -22,7 +24,12 @@ const INITIAL_EXERCISE: Exercise = {
 export default function App() {
   const [exercise, setExercise] = useState<Exercise>(INITIAL_EXERCISE);
   const [startMeasureIndex, setStartMeasureIndex] = useState(0);
-  const percentage = 100;
+  const [endMeasureIndex, setEndMeasureIndex] = useState<number | null>(null);
+  const [loop, setLoop] = useState(false);
+  const [percentage, setPercentage] = useState(100);
+  const [prepBeats, setPrepBeats] = useState(4);
+  const [soundConfig, setSoundConfig] = useState<SoundConfig>(DEFAULT_SOUND_CONFIG);
+  const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
 
   const resolvedMeasures = useMemo(
     () => resolveExercise(exercise.measures),
@@ -38,6 +45,17 @@ export default function App() {
       setStartMeasureIndex(Math.max(0, exercise.measures.length - 1));
     }
   }, [exercise.measures.length, startMeasureIndex]);
+
+  // Clamp endMeasureIndex when measures are deleted or start moves past it
+  useEffect(() => {
+    if (endMeasureIndex === null) return;
+    const lastIndex = exercise.measures.length - 1;
+    const clamped = Math.min(endMeasureIndex, lastIndex);
+    const ensureAfterStart = Math.max(clamped, startMeasureIndex);
+    if (ensureAfterStart !== endMeasureIndex) {
+      setEndMeasureIndex(ensureAfterStart > lastIndex ? null : ensureAfterStart);
+    }
+  }, [exercise.measures.length, startMeasureIndex, endMeasureIndex]);
 
   function setMeasures(newMeasures: Measure[]) {
     setExercise((prev) => ({ ...prev, measures: newMeasures }));
@@ -68,15 +86,15 @@ export default function App() {
     handleInsertAfter(exercise.measures.length - 1);
   }
 
-  function handleSetMeasureTempo(index: number, tempo: number | null) {
-    handleUpdateMeasure(index, { ...exercise.measures[index], tempo });
-  }
-
   const { isPlaying, currentMeasure, currentBeat, toggle } = useMetronome({
     resolvedMeasures,
     startMeasureIndex,
+    endMeasureIndex,
     percentage,
-    loop: false,
+    loop,
+    prepBeats,
+    soundConfig,
+    subdivisionLevel,
   });
 
   return (
@@ -97,16 +115,28 @@ export default function App() {
           onDeleteMeasure={handleDeleteMeasure}
           onInsertAfter={handleInsertAfter}
           onAddMeasure={handleAddMeasure}
+          loop={loop}
         />
 
         <Metronome
           resolvedMeasures={resolvedMeasures}
           startMeasureIndex={startMeasureIndex}
           onStartMeasureChange={setStartMeasureIndex}
+          endMeasureIndex={endMeasureIndex}
+          onEndMeasureChange={setEndMeasureIndex}
+          loop={loop}
+          onLoopChange={setLoop}
           isPlaying={isPlaying}
           onToggle={toggle}
           hasInvalidMeasure={hasInvalidMeasure}
-          onSetMeasureTempo={handleSetMeasureTempo}
+          percentage={percentage}
+          onPercentageChange={setPercentage}
+          prepBeats={prepBeats}
+          onPrepBeatsChange={setPrepBeats}
+          soundConfig={soundConfig}
+          onSoundConfigChange={setSoundConfig}
+          subdivisionLevel={subdivisionLevel}
+          onSubdivisionLevelChange={setSubdivisionLevel}
         />
       </main>
 

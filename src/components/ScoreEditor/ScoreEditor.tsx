@@ -49,6 +49,7 @@ interface ScoreEditorProps {
   currentBeat: number | null;
   percentage: number;
   startMeasureIndex: number;
+  loop: boolean;
   onUpdateMeasure: (index: number, updated: MeasureData) => void;
   onDeleteMeasure: (index: number) => void;
   onInsertAfter: (index: number) => void;
@@ -61,6 +62,8 @@ export function ScoreEditor({
   currentMeasure,
   currentBeat,
   percentage,
+  startMeasureIndex,
+  loop,
   onUpdateMeasure,
   onDeleteMeasure,
   onInsertAfter,
@@ -69,6 +72,7 @@ export function ScoreEditor({
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const lastTimestampRef = useRef(0);
+  const prevMeasureRef = useRef<number | null>(null);
 
   // Refs that the rAF loop reads — updated from props without restarting the loop
   const currentMeasureRef = useRef<number | null>(null);
@@ -109,6 +113,26 @@ export function ScoreEditor({
   beatIndexMapRef.current = beatIndexMap;
   currentMeasureRef.current = currentMeasure;
   currentBeatRef.current = currentBeat;
+
+  // Jump scroll back to start position on loop
+  useEffect(() => {
+    if (!isPlaying || !loop || currentMeasure === null) return;
+    const prev = prevMeasureRef.current;
+    prevMeasureRef.current = currentMeasure;
+
+    // Detect backwards jump to startMeasureIndex — this is a loop restart
+    if (prev !== null && prev > currentMeasure && currentMeasure === startMeasureIndex) {
+      const container = scrollRef.current;
+      if (!container) return;
+      const key = `${startMeasureIndex}:0`;
+      const flatIndex = beatIndexMap.get(key);
+      if (flatIndex === undefined) return;
+      const viewportWidth = container.clientWidth;
+      const maxScroll = container.scrollWidth - viewportWidth;
+      const targetScroll = flatBeats[flatIndex].absX - viewportWidth * SCROLL_TARGET_FRACTION;
+      container.scrollLeft = Math.max(0, Math.min(targetScroll, maxScroll));
+    }
+  }, [currentMeasure, isPlaying, loop, startMeasureIndex, beatIndexMap, flatBeats]);
 
   // Initial jump when playback starts
   useEffect(() => {

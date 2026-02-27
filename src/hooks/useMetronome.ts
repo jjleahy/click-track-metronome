@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback } from 'react';
 import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import { MetronomeScheduler } from '../audio/scheduler';
+import type { SoundConfig } from '../models/SoundConfig';
+import { DEFAULT_SOUND_CONFIG } from '../models/SoundConfig';
 
 interface UseMetronomeOptions {
   resolvedMeasures: ResolvedMeasure[];
@@ -8,6 +10,9 @@ interface UseMetronomeOptions {
   endMeasureIndex?: number | null; // null/undefined = play to end of measures array
   loop?: boolean;                  // default false
   percentage: number;
+  prepBeats?: number;              // default 0
+  soundConfig?: SoundConfig;
+  subdivisionLevel?: 'off' | 'eighths' | 'sixteenths';
 }
 
 export function useMetronome({
@@ -16,6 +21,9 @@ export function useMetronome({
   endMeasureIndex = null,
   loop = false,
   percentage,
+  prepBeats = 0,
+  soundConfig = DEFAULT_SOUND_CONFIG,
+  subdivisionLevel = 'off' as const,
 }: UseMetronomeOptions) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMeasure, setCurrentMeasure] = useState<number | null>(null);
@@ -47,6 +55,9 @@ export function useMetronome({
       endMeasureIndex,
       loop,
       percentage,
+      prepBeats,
+      soundConfig,
+      subdivisionLevel,
       audioCtx,
       onBeat: (measureIndex, beatIndex) => {
         setCurrentMeasure(measureIndex);
@@ -61,7 +72,7 @@ export function useMetronome({
     });
     schedulerRef.current.start();
     setIsPlaying(true);
-  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, percentage, stop]);
+  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, percentage, prepBeats, soundConfig, subdivisionLevel, stop]);
 
   const toggle = useCallback(() => {
     if (isPlaying) stop();

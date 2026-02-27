@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { DEFAULT_SOUND_CONFIG } from '../../src/models/SoundConfig';
 import userEvent from '@testing-library/user-event';
 import { Metronome } from '../../src/components/Metronome/Metronome';
 import type { ResolvedMeasure } from '../../src/models/ResolvedMeasure';
@@ -8,14 +9,6 @@ import { resolveExercise } from '../../src/utils/resolveExercise';
 import type { Measure } from '../../src/models/Exercise';
 
 function makeResolved(tempos: number[]): ResolvedMeasure[] {
-  const measures: Measure[] = tempos.map((tempo, i) => ({
-    meter: [4, 4] as [number, number],
-    beats: defaultBeats(4, 4),
-    tempo: i === 0 ? tempo : (tempo === tempos[0] ? null : tempo),
-    rehearsalNumber: null,
-    gradualTempo: null,
-  }));
-  // For simplicity, give each an explicit tempo so resolved values match
   const measuresExplicit: Measure[] = tempos.map((tempo) => ({
     meter: [4, 4] as [number, number],
     beats: defaultBeats(4, 4),
@@ -30,21 +23,34 @@ const defaultProps = {
   resolvedMeasures: makeResolved([80, 80, 80]),
   startMeasureIndex: 0,
   onStartMeasureChange: vi.fn(),
+  endMeasureIndex: null,
+  onEndMeasureChange: vi.fn(),
+  loop: false,
+  onLoopChange: vi.fn(),
   isPlaying: false,
   onToggle: vi.fn(),
   hasInvalidMeasure: false,
-  onSetMeasureTempo: vi.fn(),
+  percentage: 100,
+  onPercentageChange: vi.fn(),
+  prepBeats: 4,
+  onPrepBeatsChange: vi.fn(),
+  soundConfig: DEFAULT_SOUND_CONFIG,
+  onSoundConfigChange: vi.fn(),
+  subdivisionLevel: 'off' as const,
+  onSubdivisionLevelChange: vi.fn(),
 };
 
 describe('Metronome', () => {
   it('renders start measure select with labels', () => {
     render(<Metronome {...defaultProps} />);
-    expect(screen.getByRole('option', { name: 'm. 1' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'm. 2' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'm. 3' })).toBeTruthy();
+    const startSelect = screen.getByLabelText(/start at/i) as HTMLSelectElement;
+    const optionTexts = Array.from(startSelect.options).map((o) => o.text.trim());
+    expect(optionTexts).toContain('m. 1');
+    expect(optionTexts).toContain('m. 2');
+    expect(optionTexts).toContain('m. 3');
   });
 
-  it('tempo input shows resolved tempo for starting measure', () => {
+  it('score tempo display shows resolved tempo for starting measure', () => {
     render(
       <Metronome
         {...defaultProps}
@@ -52,7 +58,7 @@ describe('Metronome', () => {
         startMeasureIndex={0}
       />
     );
-    expect(screen.getByRole('spinbutton', { name: /tempo/i })).toHaveValue(120);
+    expect(screen.getByLabelText(/score tempo/i).textContent).toContain('120');
   });
 
   it('play button is disabled when hasInvalidMeasure', () => {
@@ -80,22 +86,40 @@ describe('Metronome', () => {
   it('changing start measure calls onStartMeasureChange', async () => {
     const onStartMeasureChange = vi.fn();
     render(<Metronome {...defaultProps} onStartMeasureChange={onStartMeasureChange} />);
-    await userEvent.selectOptions(screen.getByRole('combobox'), '2');
+    await userEvent.selectOptions(screen.getByLabelText(/start at/i), '2');
     expect(onStartMeasureChange).toHaveBeenCalledWith(2);
   });
 
   it('start measure select is disabled during playback', () => {
     render(<Metronome {...defaultProps} isPlaying={true} />);
-    expect(screen.getByRole('combobox')).toBeDisabled();
+    expect(screen.getByLabelText(/start at/i)).toBeDisabled();
   });
 
-  it('tempo commit on blur calls onSetMeasureTempo', async () => {
-    const onSetMeasureTempo = vi.fn();
-    render(<Metronome {...defaultProps} onSetMeasureTempo={onSetMeasureTempo} />);
-    const tempoInput = screen.getByRole('spinbutton', { name: /tempo/i });
-    await userEvent.clear(tempoInput);
-    await userEvent.type(tempoInput, '140');
+  it('editing percentage calls onPercentageChange', async () => {
+    const onPercentageChange = vi.fn();
+    render(<Metronome {...defaultProps} onPercentageChange={onPercentageChange} />);
+    const pctInput = screen.getByRole('spinbutton', { name: /speed percentage/i });
+    await userEvent.clear(pctInput);
+    await userEvent.type(pctInput, '80');
     await userEvent.tab();
-    expect(onSetMeasureTempo).toHaveBeenCalledWith(0, 140);
+    expect(onPercentageChange).toHaveBeenCalledWith(80);
+  });
+
+  it('editing effective tempo back-derives percentage', async () => {
+    const onPercentageChange = vi.fn();
+    // score tempo = 100 at 100%, effective = 100. Set effective to 80 → pct = 80
+    render(
+      <Metronome
+        {...defaultProps}
+        resolvedMeasures={makeResolved([100, 100, 100])}
+        percentage={100}
+        onPercentageChange={onPercentageChange}
+      />
+    );
+    const effectiveInput = screen.getByRole('spinbutton', { name: /effective tempo/i });
+    await userEvent.clear(effectiveInput);
+    await userEvent.type(effectiveInput, '80');
+    await userEvent.tab();
+    expect(onPercentageChange).toHaveBeenCalledWith(80);
   });
 });
