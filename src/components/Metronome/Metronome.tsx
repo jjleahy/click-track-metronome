@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
-import { toDisplayTempo, beatLabel } from '../../utils/tempoConversion';
+import { toDisplayTempo } from '../../utils/tempoConversion';
+import { BeatLabel } from '../ScoreEditor/BeatLabel';
 import type { SoundConfig, SoundType } from '../../models/SoundConfig';
 
 interface MetronomeProps {
@@ -49,7 +50,6 @@ export function Metronome({
   const firstSubdivision = startMeasure?.source.beats[0]?.subdivisions ?? 1;
   const internalTempo = startMeasure?.tempo ?? 80;
   const scoreTempo = toDisplayTempo(internalTempo, denominator, firstSubdivision);
-  const label = beatLabel(denominator, firstSubdivision);
 
   const effectiveTempo = Math.round(scoreTempo * percentage / 100);
 
@@ -134,7 +134,12 @@ export function Metronome({
       </div>
 
       <div>
-        <span aria-label="Score tempo">{label}{scoreTempo}</span>
+        <BeatLabel
+          denominator={denominator}
+          firstSubdivision={firstSubdivision}
+          value={scoreTempo}
+          isReadOnly
+        />
       </div>
 
       <div>
@@ -153,17 +158,16 @@ export function Metronome({
       </div>
 
       <div>
-        <label htmlFor="effective-tempo-input">{label}</label>
-        <input
+        <BeatLabel
+          denominator={denominator}
+          firstSubdivision={firstSubdivision}
+          value={effectiveInputStr}
           id="effective-tempo-input"
-          type="number"
           min={1}
           max={999}
-          value={effectiveInputStr}
-          onChange={(e) => setEffectiveInputStr(e.target.value)}
+          onChange={(val) => setEffectiveInputStr(val)}
           onBlur={commitEffective}
           onKeyDown={(e) => { if (e.key === 'Enter') commitEffective(); }}
-          aria-label="Effective tempo"
         />
       </div>
 

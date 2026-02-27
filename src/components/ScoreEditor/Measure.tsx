@@ -3,7 +3,8 @@ import type { Measure as MeasureData } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { defaultBeats } from '../../utils/subdivisionDefaults';
 import { isMeasureValid, applySubdivisionChange } from '../../utils/subdivisionValidation';
-import { toDisplayTempo, toInternalTempo, beatLabel } from '../../utils/tempoConversion';
+import { toDisplayTempo, toInternalTempo } from '../../utils/tempoConversion';
+import { BeatLabel } from './BeatLabel';
 import {
   HEADER_HEIGHT,
   STAFF_HEIGHT,
@@ -347,18 +348,17 @@ export function Measure({
 
       {/* Row B: Tempo */}
       <div style={{ position: 'absolute', top: TEMPO_ROW_TOP, left: 4 }}>
-        <label htmlFor={`tempo-${resolved.label}`}>{beatLabel(denominator, firstSubdivision)}</label>{' '}
-        <input
+        <BeatLabel
+          denominator={denominator}
+          firstSubdivision={firstSubdivision}
+          value={tempoInputStr}
+          placeholder={String(displayResolvedTempo)}
           id={`tempo-${resolved.label}`}
-          type="number"
           min={1}
           max={999}
-          placeholder={String(displayResolvedTempo)}
-          value={tempoInputStr}
-          onChange={(e) => setTempoInputStr(e.target.value)}
+          onChange={setTempoInputStr}
           onBlur={commitTempo}
           onKeyDown={(e) => { if (e.key === 'Enter') commitTempo(); }}
-          aria-label="Tempo"
         />
       </div>
 

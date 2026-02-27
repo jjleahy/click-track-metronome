@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { firstBeatDuration, toDisplayTempo, toInternalTempo, beatLabel } from './tempoConversion';
+import { firstBeatDuration, toDisplayTempo, toInternalTempo, beatLabelGlyph } from './tempoConversion';
+import { NOTE_HALF_UP, NOTE_QUARTER_UP, NOTE_8TH_UP } from './noteGlyphs';
 
 describe('firstBeatDuration', () => {
   it('quarter in 4/4: 1/4', () => {
@@ -60,24 +61,23 @@ describe('toDisplayTempo / toInternalTempo round-trip', () => {
   });
 });
 
-describe('beatLabel', () => {
+describe('beatLabelGlyph', () => {
   it('quarter in 4/4', () => {
-    expect(beatLabel(4, 1)).toBe('q = ');
+    expect(beatLabelGlyph(4, 1)).toEqual({ noteGlyph: NOTE_QUARTER_UP, dotted: false });
   });
   it('dotted quarter in 6/8', () => {
-    expect(beatLabel(8, 3)).toBe('q• = ');
+    expect(beatLabelGlyph(8, 3)).toEqual({ noteGlyph: NOTE_QUARTER_UP, dotted: true });
   });
   it('eighth in 3/8', () => {
-    expect(beatLabel(8, 1)).toBe('e = ');
+    expect(beatLabelGlyph(8, 1)).toEqual({ noteGlyph: NOTE_8TH_UP, dotted: false });
   });
   it('dotted eighth in 6/16', () => {
-    expect(beatLabel(16, 3)).toBe('e• = ');
+    expect(beatLabelGlyph(16, 3)).toEqual({ noteGlyph: NOTE_8TH_UP, dotted: true });
   });
   it('half in 2/2', () => {
-    expect(beatLabel(2, 1)).toBe('h = ');
+    expect(beatLabelGlyph(2, 1)).toEqual({ noteGlyph: NOTE_HALF_UP, dotted: false });
   });
-  it('unusual beat falls back to fraction label', () => {
-    // 5/8 doesn't match any standard note duration
-    expect(beatLabel(8, 5)).toBe('5/8 = ');
+  it('unusual beat returns null', () => {
+    expect(beatLabelGlyph(8, 5)).toBeNull();
   });
 });

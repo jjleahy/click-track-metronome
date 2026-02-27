@@ -32,6 +32,13 @@ export const FLAG_16TH_UP = '\uE242';
 // --- Augmentation dot ---
 export const AUG_DOT = '\uE1E7';
 
+// --- Individual notes (for inline tempo labels, SMuFL U+E1D0–U+E1DF) ---
+export const NOTE_WHOLE      = '\uE1D2'; // whole note
+export const NOTE_HALF_UP    = '\uE1D3'; // half note stem up
+export const NOTE_QUARTER_UP = '\uE1D5'; // quarter note stem up
+export const NOTE_8TH_UP     = '\uE1D7'; // eighth note stem up
+export const NOTE_16TH_UP    = '\uE1D9'; // 16th note stem up
+
 // ---------------------------------------------------------------------------
 // Time-signature digit conversion
 // ---------------------------------------------------------------------------

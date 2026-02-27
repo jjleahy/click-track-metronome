@@ -1,3 +1,5 @@
+import { NOTE_HALF_UP, NOTE_QUARTER_UP, NOTE_8TH_UP } from './noteGlyphs';
+
 // Returns the duration of the first big beat as a fraction of a whole note.
 // e.g. denominator=8, firstSubdivision=3 → 3/8
 export function firstBeatDuration(denominator: number, firstSubdivision: number): number {
@@ -18,19 +20,22 @@ export function toInternalTempo(displayTempo: number, denominator: number, first
   return Math.floor(raw + 0.5);
 }
 
-// Builds a text label like "q = ", "e• = ", "h = " for the first beat.
-// TODO: Stage 7 — replace text labels with note glyphs
-export function beatLabel(denominator: number, firstSubdivision: number): string {
+/** Returns the Bravura glyph char and whether it needs an augmentation dot,
+ *  or null for unusual beat durations (caller should show a fraction instead). */
+export function beatLabelGlyph(
+  denominator: number,
+  firstSubdivision: number,
+): { noteGlyph: string; dotted: boolean } | null {
   const beatDur = firstBeatDuration(denominator, firstSubdivision);
-  const map: [number, string][] = [
-    [1 / 2, 'h'],
-    [3 / 8, 'q•'],
-    [1 / 4, 'q'],
-    [3 / 16, 'e•'],
-    [1 / 8, 'e'],
+  const map: [number, string, boolean][] = [
+    [1 / 2,  NOTE_HALF_UP,    false],
+    [3 / 8,  NOTE_QUARTER_UP, true],
+    [1 / 4,  NOTE_QUARTER_UP, false],
+    [3 / 16, NOTE_8TH_UP,     true],
+    [1 / 8,  NOTE_8TH_UP,     false],
   ];
-  for (const [dur, label] of map) {
-    if (Math.abs(beatDur - dur) < 1e-9) return label + ' = ';
+  for (const [dur, noteGlyph, dotted] of map) {
+    if (Math.abs(beatDur - dur) < 1e-9) return { noteGlyph, dotted };
   }
-  return `${firstSubdivision}/${denominator} = `;
+  return null;
 }

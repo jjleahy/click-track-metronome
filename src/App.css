@@ -146,6 +146,13 @@
   font-style: normal;
 }
 
+/* Beat label (note glyph + = + tempo value) */
+.beat-label-glyph {
+  font-family: 'Bravura';
+  font-size: 1.3em;
+  line-height: 1;
+}
+
 /* Score editor */
 .score-editor__scroll-container {
   position: relative;
