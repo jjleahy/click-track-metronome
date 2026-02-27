@@ -197,13 +197,14 @@ export function ScoreEditor({
     }
   }, [currentMeasure, isPlaying, loop, startMeasureIndex, beatIndexMap, flatBeats]);
 
-  // Initial jump when playback starts
+  // Initial jump when playback starts — use startMeasureIndex so it works
+  // even when prep beats delay currentMeasure/currentBeat from being set
   useEffect(() => {
-    if (!isPlaying || currentMeasure === null || currentBeat === null) return;
+    if (!isPlaying) return;
     const container = scrollRef.current;
     if (!container) return;
 
-    const key = `${currentMeasure}:${currentBeat}`;
+    const key = `${startMeasureIndex}:0`;
     const flatIndex = beatIndexMap.get(key);
     if (flatIndex === undefined) return;
 
