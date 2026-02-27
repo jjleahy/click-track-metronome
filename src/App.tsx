@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Exercise, Measure } from './models/Exercise';
 import { useMetronome } from './hooks/useMetronome';
-import { resolveExercise } from './utils/resolveExercise';
+import { resolveExercise, computeLandingTargets } from './utils/resolveExercise';
 import { defaultBeats } from './utils/subdivisionDefaults';
 import { isMeasureValid } from './utils/subdivisionValidation';
 import { ScoreEditor } from './components/ScoreEditor/ScoreEditor';
@@ -30,6 +30,7 @@ export default function App() {
   const [prepBeats, setPrepBeats] = useState(4);
   const [soundConfig, setSoundConfig] = useState<SoundConfig>(DEFAULT_SOUND_CONFIG);
   const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
+  const [pendingAccelStart, setPendingAccelStart] = useState<number | null>(null);
 
   const resolvedMeasures = useMemo(
     () => resolveExercise(exercise.measures),
@@ -65,26 +66,78 @@ export default function App() {
     setMeasures(exercise.measures.map((m, i) => (i === index ? updated : m)));
   }
 
+  function clearSpanIfAffected(measures: Measure[], resolvedAtIndex: number): Measure[] {
+    const rm = resolvedMeasures[resolvedAtIndex];
+    if (!rm) return measures;
+    const zone = rm.accelRitEnding ?? rm.accelRitStarting;
+    if (!zone) return measures;
+    return measures.map((m, i) =>
+      i === zone.sourceIndex ? { ...m, gradualTempo: null } : m
+    );
+  }
+
   function handleDeleteMeasure(index: number) {
-    setMeasures(exercise.measures.filter((_, i) => i !== index));
+    const cleared = clearSpanIfAffected(exercise.measures, index);
+    setMeasures(cleared.filter((_, i) => i !== index));
+    if (pendingAccelStart !== null && (pendingAccelStart === index || pendingAccelStart >= cleared.length - 1)) {
+      setPendingAccelStart(null);
+    }
   }
 
   function handleInsertAfter(index: number) {
-    const source = exercise.measures[index];
+    const cleared = clearSpanIfAffected(exercise.measures, index + 1 < resolvedMeasures.length ? index + 1 : index);
+    const source = cleared[index];
     const newMeasure: Measure = {
       ...source,
       beats: source.beats.map((b) => ({ ...b })),
+      gradualTempo: null,
     };
     setMeasures([
-      ...exercise.measures.slice(0, index + 1),
+      ...cleared.slice(0, index + 1),
       newMeasure,
-      ...exercise.measures.slice(index + 1),
+      ...cleared.slice(index + 1),
     ]);
   }
 
   function handleAddMeasure() {
     handleInsertAfter(exercise.measures.length - 1);
   }
+
+  function handleAccelStart(measureIndex: number) {
+    setPendingAccelStart(measureIndex);
+  }
+
+  function handleAccelLand(targetIndex: number, zone: 'starting' | 'ending') {
+    if (pendingAccelStart === null) return;
+    if (zone === 'starting' && targetIndex === pendingAccelStart) {
+      // Single-measure span — endTempo will be null initially (user can edit it)
+      handleUpdateMeasure(pendingAccelStart, {
+        ...exercise.measures[pendingAccelStart],
+        gradualTempo: { measureLength: 0, endTempo: null },
+      });
+    } else if (zone === 'ending') {
+      handleUpdateMeasure(pendingAccelStart, {
+        ...exercise.measures[pendingAccelStart],
+        gradualTempo: { measureLength: targetIndex - pendingAccelStart, endTempo: null },
+      });
+    }
+    setPendingAccelStart(null);
+  }
+
+  function handleAccelCancel() {
+    setPendingAccelStart(null);
+  }
+
+  function handleAccelDelete(sourceIndex: number) {
+    handleUpdateMeasure(sourceIndex, {
+      ...exercise.measures[sourceIndex],
+      gradualTempo: null,
+    });
+  }
+
+  const landingTargets = pendingAccelStart !== null
+    ? computeLandingTargets(resolvedMeasures, pendingAccelStart)
+    : null;
 
   const { isPlaying, currentMeasure, currentBeat, toggle } = useMetronome({
     resolvedMeasures,
@@ -116,6 +169,12 @@ export default function App() {
           onInsertAfter={handleInsertAfter}
           onAddMeasure={handleAddMeasure}
           loop={loop}
+          pendingAccelStart={pendingAccelStart}
+          landingTargets={landingTargets}
+          onAccelStart={handleAccelStart}
+          onAccelLand={handleAccelLand}
+          onAccelCancel={handleAccelCancel}
+          onAccelDelete={handleAccelDelete}
         />
 
         <Metronome

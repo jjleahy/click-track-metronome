@@ -5,6 +5,7 @@ export interface Beat {
 
 export interface GradualTempo {
   measureLength: number; // how many measures the change spans (0 = same measure only)
+  endTempo: number | null; // only used when measureLength === 0 (single-measure span)
   // TODO: type: "geometric" | "linear" | "quadratic" — always geometric for now
 }
 

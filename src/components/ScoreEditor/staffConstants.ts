@@ -13,7 +13,8 @@ export const STAFF_SPACE = STAFF_HEIGHT / (STAFF_LINES - 1); // 20px — derived
 //   Row B (TEMPO_ROW_TOP):  tempo marking — q = 120 etc.
 //   Row C (LABEL_ROW_TOP):  measure number + edit controls
 
-export const ACCEL_ROW_TOP = 10;      // px from component top
+export const ACCEL_ROW_TOP = 0;       // px from component top
+export const ACCEL_ROW_HEIGHT = 30;   // px — height of the accel/rit row
 export const TEMPO_ROW_TOP = 40;      // px — one text-row below accel
 export const LABEL_ROW_TOP = 85;      // px — breathing room before staff top
 

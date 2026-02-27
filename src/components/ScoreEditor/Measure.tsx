@@ -12,14 +12,18 @@ import {
   STAFF_LINE_HEIGHT,
   TOTAL_HEIGHT,
   ACCEL_ROW_TOP,
+  ACCEL_ROW_HEIGHT,
   TEMPO_ROW_TOP,
   LABEL_ROW_TOP,
   TIMESIG_NUM_TOP,
   TIMESIG_DEN_TOP,
   BARLINE_WIDTH,
+  TIME_SIG_WIDTH,
+  SPACE_AFTER_TIMESIG,
 } from './staffConstants';
 import { BravuraNumberInput } from './BravuraNumberInput';
 import { NoteGlyph } from './NoteGlyph';
+import type { AccelRitZone } from '../../models/ResolvedMeasure';
 
 interface MeasureProps {
   resolved: ResolvedMeasure;
@@ -28,10 +32,21 @@ interface MeasureProps {
   onChange: (updated: MeasureData) => void;
   onDelete: () => void;
   onInsertAfter: () => void;
+  pendingAccelStart: number | null;
+  isLandingTarget: boolean;
+  onAccelStart: (measureIndex: number) => void;
+  onAccelLand: (targetIndex: number, zone: 'starting' | 'ending') => void;
+  onAccelDelete: (sourceIndex: number) => void;
 }
 
 // Vertical position for footer-zone rows, relative to component top.
 const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just below bottom staff line
+
+const ACCEL_COLOR: Record<AccelRitZone['color'], string> = {
+  red: '#e74c3c',
+  blue: '#3498db',
+  gray: '#888',
+};
 
 export function Measure({
   resolved,
@@ -40,6 +55,11 @@ export function Measure({
   onChange,
   onDelete,
   onInsertAfter,
+  pendingAccelStart,
+  isLandingTarget,
+  onAccelStart,
+  onAccelLand,
+  onAccelDelete,
 }: MeasureProps) {
   const measure = resolved.source;
   const denominator = resolved.meter[1];
@@ -193,18 +213,127 @@ export function Measure({
         />
       ))}
 
-      {/* Row A: accel/rit — placeholder, content TBD */}
-      <div
-        style={{
-          position: 'absolute',
-          top: ACCEL_ROW_TOP,
-          left: 4,
-          fontSize: '0.75rem',
-          color: '#888',
-        }}
-      >
-        {/* accel/rit */}
-      </div>
+      {/* Row A: accel/rit — ending zone (left) + starting zone (right) */}
+      {/* Ending zone: occupies TIME_SIG_WIDTH (type=end) or TIME_SIG_WIDTH+SPACE_AFTER_TIMESIG (type=through) */}
+      {resolved.accelRitEnding !== null ? (
+        <div
+          className="accel-bar accel-bar--filled"
+          style={{
+            position: 'absolute',
+            top: ACCEL_ROW_TOP,
+            left: 0,
+            width: resolved.accelRitEnding.type === 'through'
+              ? TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG
+              : TIME_SIG_WIDTH,
+            height: ACCEL_ROW_HEIGHT,
+            backgroundColor: ACCEL_COLOR[resolved.accelRitEnding.color],
+          }}
+          onDoubleClick={() => onAccelDelete(resolved.accelRitEnding!.sourceIndex)}
+          title="Double-click to delete accel/rit"
+        />
+      ) : isLandingTarget ? (
+        <div
+          className="accel-bar accel-bar--landing"
+          style={{
+            position: 'absolute',
+            top: ACCEL_ROW_TOP,
+            left: 0,
+            width: TIME_SIG_WIDTH,
+            height: ACCEL_ROW_HEIGHT,
+          }}
+          onClick={(e) => { e.stopPropagation(); onAccelLand(resolved.index, 'ending'); }}
+          title="Click to end accel/rit here"
+        />
+      ) : null}
+
+      {/* Starting zone: occupies note area (after time sig) to barline */}
+      {(() => {
+        const zone = resolved.accelRitStarting;
+        const left = TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG;
+        const width = resolved.width - left - BARLINE_WIDTH;
+        const isOwnStart = pendingAccelStart === resolved.index;
+
+        if (zone !== null) {
+          return (
+            <div
+              className="accel-bar accel-bar--filled"
+              style={{
+                position: 'absolute',
+                top: ACCEL_ROW_TOP,
+                left,
+                width,
+                height: ACCEL_ROW_HEIGHT,
+                backgroundColor: ACCEL_COLOR[zone.color],
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              onDoubleClick={() => onAccelDelete(zone.sourceIndex)}
+              title="Double-click to delete accel/rit"
+            >
+              {zone.type === 'single' && (
+                <input
+                  type="number"
+                  min={20}
+                  max={300}
+                  placeholder={String(resolved.tempo)}
+                  value={resolved.source.gradualTempo?.endTempo ?? ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    onChange({
+                      ...resolved.source,
+                      gradualTempo: {
+                        ...resolved.source.gradualTempo!,
+                        endTempo: isNaN(val) ? null : val,
+                      },
+                    });
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Arrival tempo"
+                  style={{ position: 'absolute', right: 4, top: 4, width: '3.5rem' }}
+                />
+              )}
+            </div>
+          );
+        }
+
+        if (isOwnStart) {
+          return (
+            <div
+              className="accel-bar accel-bar--landing"
+              style={{
+                position: 'absolute',
+                top: ACCEL_ROW_TOP,
+                left,
+                width,
+                height: ACCEL_ROW_HEIGHT,
+              }}
+              onClick={(e) => { e.stopPropagation(); onAccelLand(resolved.index, 'starting'); }}
+              title="Click to make single-measure accel/rit"
+            />
+          );
+        }
+
+        if (pendingAccelStart === null) {
+          return (
+            <div
+              className="accel-bar accel-bar--empty"
+              style={{
+                position: 'absolute',
+                top: ACCEL_ROW_TOP,
+                left,
+                width,
+                height: ACCEL_ROW_HEIGHT,
+              }}
+              onClick={() => onAccelStart(resolved.index)}
+              title="Add accel/rit starting here"
+            >
+              Add accel/rit...
+            </div>
+          );
+        }
+
+        return null;
+      })()}
 
       {/* Row B: Tempo */}
       <div style={{ position: 'absolute', top: TEMPO_ROW_TOP, left: 4 }}>

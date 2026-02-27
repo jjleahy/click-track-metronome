@@ -1,6 +1,12 @@
 import type { Measure } from './Exercise';
 import type { NoteType } from '../utils/noteGlyphs';
 
+export interface AccelRitZone {
+  type: 'start' | 'end' | 'through' | 'single';
+  color: 'red' | 'blue' | 'gray';
+  sourceIndex: number; // measure index where gradualTempo originates (for deletion)
+}
+
 export interface ResolvedBeat {
   index: number;
   subdivisions: number;
@@ -23,4 +29,6 @@ export interface ResolvedMeasure {
   beats: ResolvedBeat[];
   startMs: number;         // cumulative from exercise start
   durationMs: number;      // total measure duration at 100% speed
+  accelRitEnding: AccelRitZone | null;   // left zone (TIME_SIG_WIDTH area) — span terminates or passes through
+  accelRitStarting: AccelRitZone | null; // right zone (note area) — span begins, passes through, or is single
 }

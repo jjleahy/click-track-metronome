@@ -54,6 +54,12 @@ interface ScoreEditorProps {
   onDeleteMeasure: (index: number) => void;
   onInsertAfter: (index: number) => void;
   onAddMeasure: () => void;
+  pendingAccelStart: number | null;
+  landingTargets: Set<number> | null;
+  onAccelStart: (measureIndex: number) => void;
+  onAccelLand: (targetIndex: number, zone: 'starting' | 'ending') => void;
+  onAccelCancel: () => void;
+  onAccelDelete: (sourceIndex: number) => void;
 }
 
 export function ScoreEditor({
@@ -68,6 +74,12 @@ export function ScoreEditor({
   onDeleteMeasure,
   onInsertAfter,
   onAddMeasure,
+  pendingAccelStart,
+  landingTargets,
+  onAccelStart,
+  onAccelLand,
+  onAccelCancel,
+  onAccelDelete,
 }: ScoreEditorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -209,9 +221,23 @@ export function ScoreEditor({
     };
   }, [isPlaying]);
 
+  // Escape cancels landing mode
+  useEffect(() => {
+    if (pendingAccelStart === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onAccelCancel();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [pendingAccelStart, onAccelCancel]);
+
   return (
     <section className="score-editor" aria-label="Score editor">
-      <div className="score-editor__scroll-container" ref={scrollRef}>
+      <div
+        className="score-editor__scroll-container"
+        ref={scrollRef}
+        onClick={pendingAccelStart !== null ? onAccelCancel : undefined}
+      >
         <StaffClef />
         {resolvedMeasures.map((rm) => (
           <Measure
@@ -222,6 +248,11 @@ export function ScoreEditor({
             onChange={(updated) => onUpdateMeasure(rm.index, updated)}
             onDelete={() => onDeleteMeasure(rm.index)}
             onInsertAfter={() => onInsertAfter(rm.index)}
+            pendingAccelStart={pendingAccelStart}
+            isLandingTarget={landingTargets !== null && landingTargets.has(rm.index)}
+            onAccelStart={onAccelStart}
+            onAccelLand={onAccelLand}
+            onAccelDelete={onAccelDelete}
           />
         ))}
         <button

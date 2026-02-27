@@ -111,6 +111,36 @@
   cursor: pointer;
 }
 
+/* Accel/rit row */
+.accel-bar {
+  cursor: default;
+  overflow: hidden;
+}
+
+.accel-bar--filled {
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.accel-bar--landing {
+  background: #ddd;
+  box-shadow: 1px 1px 5px #555 inset;
+  cursor: pointer;
+}
+
+.accel-bar--empty {
+  color: #777;
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  cursor: pointer;
+}
+
+.accel-bar--empty:hover {
+  color: #aaa;
+}
+
 /* Metronome panel */
 .metronome-panel {
   display: flex;
