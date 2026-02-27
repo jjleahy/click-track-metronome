@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Measure as MeasureData } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
-import { STAFF_CLEF_WIDTH } from './staffConstants';
+import { STAFF_CLEF_WIDTH, TOTAL_HEIGHT } from './staffConstants';
 import { Measure } from './Measure';
 import { StaffClef } from './StaffClef';
 
@@ -14,6 +14,7 @@ interface FlatBeat {
 
 const SCROLL_TARGET_FRACTION = 0.3;
 const SCROLL_LOOKAHEAD_BEATS = 8;
+const ADD_BUTTON_WIDTH = 140; // approximate width of "+ Add Measure" button
 
 function computeScrollSpeed(
   flatBeats: FlatBeat[],
@@ -92,6 +93,56 @@ export function ScoreEditor({
   const flatBeatsRef = useRef<FlatBeat[]>([]);
   const beatIndexMapRef = useRef<Map<string, number>>(new Map());
 
+  // Scroll-tracking state for virtualization
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const scrollTrackRafRef = useRef<number | null>(null);
+
+  const handleScroll = useCallback(() => {
+    if (scrollTrackRafRef.current !== null) return;
+    scrollTrackRafRef.current = requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) {
+        setScrollLeft(el.scrollLeft);
+        setViewportWidth(el.clientWidth);
+      }
+      scrollTrackRafRef.current = null;
+    });
+  }, []);
+
+  // Initialize viewportWidth on mount and window resize
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      setViewportWidth(el.clientWidth);
+    }
+    function onResize() {
+      const el = scrollRef.current;
+      if (el) setViewportWidth(el.clientWidth);
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Total content width for the scroll container
+  const lastMeasure = resolvedMeasures[resolvedMeasures.length - 1];
+  const totalMeasuresWidth = lastMeasure
+    ? lastMeasure.xOffset + lastMeasure.width
+    : 0;
+  const contentWidth = STAFF_CLEF_WIDTH + totalMeasuresWidth + ADD_BUTTON_WIDTH;
+
+  // Virtualization: only render measures overlapping the visible range + buffer
+  const visibleMeasures = useMemo(() => {
+    const buffer = viewportWidth || 800; // fallback before first measurement
+    const left = scrollLeft - buffer;
+    const right = scrollLeft + (viewportWidth || 800) + buffer;
+    return resolvedMeasures.filter(m => {
+      const mLeft = STAFF_CLEF_WIDTH + m.xOffset;
+      const mRight = mLeft + m.width;
+      return mRight > left && mLeft < right;
+    });
+  }, [resolvedMeasures, scrollLeft, viewportWidth]);
+
   const flatBeats = useMemo(() => {
     const scale = 100 / percentage;
     const result: FlatBeat[] = [];
@@ -139,9 +190,9 @@ export function ScoreEditor({
       const key = `${startMeasureIndex}:0`;
       const flatIndex = beatIndexMap.get(key);
       if (flatIndex === undefined) return;
-      const viewportWidth = container.clientWidth;
-      const maxScroll = container.scrollWidth - viewportWidth;
-      const targetScroll = flatBeats[flatIndex].absX - viewportWidth * SCROLL_TARGET_FRACTION;
+      const vpWidth = container.clientWidth;
+      const maxScroll = container.scrollWidth - vpWidth;
+      const targetScroll = flatBeats[flatIndex].absX - vpWidth * SCROLL_TARGET_FRACTION;
       container.scrollLeft = Math.max(0, Math.min(targetScroll, maxScroll));
     }
   }, [currentMeasure, isPlaying, loop, startMeasureIndex, beatIndexMap, flatBeats]);
@@ -156,9 +207,9 @@ export function ScoreEditor({
     const flatIndex = beatIndexMap.get(key);
     if (flatIndex === undefined) return;
 
-    const viewportWidth = container.clientWidth;
-    const maxScroll = container.scrollWidth - viewportWidth;
-    const targetScroll = flatBeats[flatIndex].absX - viewportWidth * SCROLL_TARGET_FRACTION;
+    const vpWidth = container.clientWidth;
+    const maxScroll = container.scrollWidth - vpWidth;
+    const targetScroll = flatBeats[flatIndex].absX - vpWidth * SCROLL_TARGET_FRACTION;
     container.scrollLeft = Math.max(0, Math.min(targetScroll, maxScroll));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]); // Only on play/stop transitions
@@ -198,12 +249,12 @@ export function ScoreEditor({
         return;
       }
 
-      const viewportWidth = el.clientWidth;
-      const actual30Mark = el.scrollLeft + viewportWidth * SCROLL_TARGET_FRACTION;
+      const vpWidth = el.clientWidth;
+      const actual30Mark = el.scrollLeft + vpWidth * SCROLL_TARGET_FRACTION;
       const speed = computeScrollSpeed(fb, flatIndex, actual30Mark);
 
       if (speed !== 0) {
-        const maxScroll = el.scrollWidth - viewportWidth;
+        const maxScroll = el.scrollWidth - vpWidth;
         const newScroll = el.scrollLeft + speed * dt;
         el.scrollLeft = Math.max(0, Math.min(newScroll, maxScroll));
       }
@@ -236,10 +287,14 @@ export function ScoreEditor({
       <div
         className="score-editor__scroll-container"
         ref={scrollRef}
+        onScroll={handleScroll}
         onClick={pendingAccelStart !== null ? onAccelCancel : undefined}
+        style={{ height: TOTAL_HEIGHT }}
       >
+        {/* Sizer div establishes the scrollable content width */}
+        <div style={{ width: contentWidth, height: 1 }} />
         <StaffClef />
-        {resolvedMeasures.map((rm) => (
+        {visibleMeasures.map((rm) => (
           <Measure
             key={rm.index}
             resolved={rm}
@@ -259,6 +314,7 @@ export function ScoreEditor({
           className="score-editor__add-button"
           onClick={onAddMeasure}
           aria-label="Add measure at end"
+          style={{ left: STAFF_CLEF_WIDTH + totalMeasuresWidth }}
         >
           + Add Measure
         </button>

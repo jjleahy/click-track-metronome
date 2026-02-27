@@ -49,10 +49,11 @@ export function StaffClef() {
     <div
       className="staff-clef"
       style={{
-        position: 'relative',
+        position: 'absolute',
+        left: 0,
+        top: 0,
         width: STAFF_CLEF_WIDTH,
         height: TOTAL_HEIGHT,
-        flexShrink: 0,
       }}
     >
       {/* Five staff lines */}

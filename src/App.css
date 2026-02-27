@@ -148,12 +148,9 @@
 
 /* Score editor */
 .score-editor__scroll-container {
-  display: flex;
-  flex-direction: row;
-  gap: 0;
+  position: relative;
   overflow-x: auto;
   padding-bottom: 0.5rem;
-  align-items: flex-start;
 }
 
 .staff-clef,
@@ -162,8 +159,8 @@
 }
 
 .measure {
-  position: relative;
-  flex: 0 0 auto;
+  position: absolute;
+  top: 0;
 }
 
 .measure--invalid {
@@ -218,8 +215,8 @@
 }
 
 .score-editor__add-button {
-  flex: 0 0 auto;
-  align-self: flex-start;
+  position: absolute;
+  top: 0;
   padding: 0.5rem 1rem;
   border: 2px dashed #444;
   border-radius: 6px;

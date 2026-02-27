@@ -11,6 +11,7 @@ import {
   STAFF_SPACE,
   STAFF_LINE_HEIGHT,
   TOTAL_HEIGHT,
+  STAFF_CLEF_WIDTH,
   ACCEL_ROW_TOP,
   ACCEL_ROW_HEIGHT,
   TEMPO_ROW_TOP,
@@ -172,10 +173,9 @@ export function Measure({
     <div
       className={measureClass}
       style={{
-        position: 'relative',
         width: resolved.width,
         height: TOTAL_HEIGHT,
-        flexShrink: 0,
+        left: STAFF_CLEF_WIDTH + resolved.xOffset,
       }}
     >
       {/* Five staff lines */}
