@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveExercise } from '../../src/utils/resolveExercise';
+import { resolveExercise, computeLandingTargets } from '../../src/utils/resolveExercise';
 import { computeNotePositions, computeMeasureWidth } from '../../src/utils/noteGlyphs';
 import type { Measure } from '../../src/models/Exercise';
 
@@ -148,5 +148,209 @@ describe('resolveExercise', () => {
     const expected = computeMeasureWidth(m.beats, m.meter[1]);
 
     expect(result[0].width).toBe(expected);
+  });
+});
+
+describe('computeLandingTargets', () => {
+  it('returns all subsequent measures when none have explicit tempo or gradualTempo', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: null }),
+    ];
+    const resolved = resolveExercise(measures);
+    const targets = computeLandingTargets(resolved, 0);
+    expect(targets).toEqual(new Set([1, 2, 3]));
+  });
+
+  it('stops after a measure with an explicit tempo', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: 100 }),  // explicit — valid landing but blocks further
+      makeMeasure({ tempo: null }),
+    ];
+    const resolved = resolveExercise(measures);
+    const targets = computeLandingTargets(resolved, 0);
+    // Measure 1 (implied) and 2 (explicit arrival) are valid; 3 is blocked
+    expect(targets).toEqual(new Set([1, 2]));
+  });
+
+  it('stops before a measure with an occupied ending zone', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 1, endTempo: null } }),
+      makeMeasure({ tempo: 90 }),  // has accelRitEnding from measure 2's span
+    ];
+    const resolved = resolveExercise(measures);
+    const targets = computeLandingTargets(resolved, 0);
+    // Measure 1 is valid; measure 2 has accelRitStarting so add then stop; measure 3 blocked
+    expect(targets).toEqual(new Set([1, 2]));
+  });
+
+  it('includes the first explicit-tempo measure as a valid target', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: 100 }),  // first measure already has explicit tempo
+    ];
+    const resolved = resolveExercise(measures);
+    const targets = computeLandingTargets(resolved, 0);
+    expect(targets).toEqual(new Set([1]));
+  });
+});
+
+describe('gradual tempo and hold timing', () => {
+  it('applies geometric interpolation across a 1-measure span', () => {
+    // 4/4 at 100 BPM, accel over 1 measure to arrival at 200 BPM
+    // Span covers measure 0 only (4 beats), arrival tempo from measure 1
+    const measures = [
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 1, endTempo: null } }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+    const beats = result[0].beats;
+
+    // N=4, geometric from 100→200
+    // Beat 0 (t=0): tempo=100, dur=600ms
+    expect(beats[0].durationMs).toBeCloseTo(600, 0);
+    // Beat 3 (t=1): tempo=200, dur=300ms
+    expect(beats[3].durationMs).toBeCloseTo(300, 0);
+    // Middle beats interpolated geometrically
+    // Beat 1 (t=1/3): tempo=100*2^(1/3)≈125.99, dur≈476.2
+    expect(beats[1].durationMs).toBeCloseTo(476.22, 0);
+    // Beat 2 (t=2/3): tempo=100*2^(2/3)≈158.74, dur≈378.0
+    expect(beats[2].durationMs).toBeCloseTo(378.0, 0);
+
+    // Arrival measure uses flat tempo 200
+    expect(result[1].beats[0].durationMs).toBeCloseTo(300, 0);
+  });
+
+  it('applies geometric interpolation across a 2-measure span', () => {
+    // 4/4 at 60 BPM, accel over 2 measures to arrival at 120 BPM
+    // Span covers measures 0-1 (8 beats total)
+    const measures = [
+      makeMeasure({ tempo: 60, gradualTempo: { measureLength: 2, endTempo: null } }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: 120 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // Beat 0 (t=0): tempo=60, dur=1000
+    expect(result[0].beats[0].durationMs).toBeCloseTo(1000, 0);
+    // Beat 7 (t=1): tempo=120, dur=500
+    expect(result[1].beats[3].durationMs).toBeCloseTo(500, 0);
+    // Arrival measure uses flat 120
+    expect(result[2].beats[0].durationMs).toBeCloseTo(500, 0);
+  });
+
+  it('single-measure span (measureLength=0) uses endTempo', () => {
+    const measures = [
+      makeMeasure({ tempo: 80, gradualTempo: { measureLength: 0, endTempo: 160 } }),
+    ];
+    const result = resolveExercise(measures);
+
+    // N=4, geometric from 80→160
+    // Beat 0: tempo=80, dur=750
+    expect(result[0].beats[0].durationMs).toBeCloseTo(750, 0);
+    // Beat 3: tempo=160, dur=375
+    expect(result[0].beats[3].durationMs).toBeCloseTo(375, 0);
+  });
+
+  it('gray gradual tempo (same start/end) produces unchanged durations', () => {
+    const measures = [
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 0, endTempo: 100 } }),
+    ];
+    const result = resolveExercise(measures);
+
+    // All beats at 100 BPM = 600ms
+    for (const beat of result[0].beats) {
+      expect(beat.durationMs).toBeCloseTo(600, 0);
+    }
+  });
+
+  it('hold overrides beat duration', () => {
+    const measures = [
+      makeMeasure({
+        tempo: 120,
+        beats: [
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 2.5 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+        ],
+      }),
+    ];
+    const result = resolveExercise(measures);
+
+    expect(result[0].beats[0].durationMs).toBe(500);
+    expect(result[0].beats[1].durationMs).toBe(2500);
+    expect(result[0].beats[1].hold).toBe(2.5);
+    expect(result[0].beats[2].durationMs).toBe(500);
+    // startMs accounts for the hold
+    expect(result[0].beats[2].startMs).toBe(3000); // 500 + 2500
+    expect(result[0].durationMs).toBe(4000); // 500 + 2500 + 500 + 500
+  });
+
+  it('hold within a gradual tempo span overrides geometric duration', () => {
+    const measures = [
+      makeMeasure({
+        tempo: 100,
+        gradualTempo: { measureLength: 1, endTempo: null },
+        beats: [
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 3.0 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+        ],
+      }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // Beat 1 should be 3000ms regardless of geometric interpolation
+    expect(result[0].beats[1].durationMs).toBe(3000);
+    expect(result[0].beats[1].hold).toBe(3.0);
+    // Other beats still get geometric interpolation
+    expect(result[0].beats[0].durationMs).toBeCloseTo(600, 0);
+    expect(result[0].beats[3].durationMs).toBeCloseTo(300, 0);
+  });
+
+  it('recomputes startMs correctly after gradual tempo adjustments', () => {
+    const measures = [
+      makeMeasure({ tempo: 100, gradualTempo: { measureLength: 1, endTempo: null } }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // Verify startMs is sequential sum of durations
+    let expected = 0;
+    for (const rm of result) {
+      expect(rm.startMs).toBeCloseTo(expected, 1);
+      for (const rb of rm.beats) {
+        expect(rb.startMs).toBeCloseTo(expected, 1);
+        expected += rb.durationMs;
+      }
+    }
+  });
+
+  it('propagates hold field to ResolvedBeat', () => {
+    const measures = [
+      makeMeasure({
+        beats: [
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 1.5 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 0.5 },
+        ],
+      }),
+    ];
+    const result = resolveExercise(measures);
+
+    expect(result[0].beats[0].hold).toBeNull();
+    expect(result[0].beats[1].hold).toBe(1.5);
+    expect(result[0].beats[2].hold).toBeNull();
+    expect(result[0].beats[3].hold).toBe(0.5);
   });
 });

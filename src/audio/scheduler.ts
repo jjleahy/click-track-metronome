@@ -104,18 +104,20 @@ export class MetronomeScheduler {
     this.playSound(this.nextClickTime, soundType);
     this.onBeat(currentMeasureIndex, currentBeatIndex);
 
-    // Schedule sub-beat clicks if subdivision level is active
+    // Schedule sub-beat clicks if subdivision level is active and beat is not held
     if (this.subdivisionLevel !== 'off') {
       const rm = this.resolvedMeasures[currentMeasureIndex];
       if (rm) {
         const rb = rm.beats[currentBeatIndex];
-        const denominator = rm.source.meter[1];
-        const subCount = computeSubBeatCount(rb.subdivisions, denominator, this.subdivisionLevel);
-        if (subCount !== null && subCount >= 2) {
-          const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
-          const subInterval = beatDuration / subCount;
-          for (let i = 1; i < subCount; i++) {
-            this.playSound(this.nextClickTime + i * subInterval, this.soundConfig.subdivision);
+        if (rb.hold === null) {
+          const denominator = rm.source.meter[1];
+          const subCount = computeSubBeatCount(rb.subdivisions, denominator, this.subdivisionLevel);
+          if (subCount !== null && subCount >= 2) {
+            const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
+            const subInterval = beatDuration / subCount;
+            for (let i = 1; i < subCount; i++) {
+              this.playSound(this.nextClickTime + i * subInterval, this.soundConfig.subdivision);
+            }
           }
         }
       }

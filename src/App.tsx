@@ -63,7 +63,20 @@ export default function App() {
   }
 
   function handleUpdateMeasure(index: number, updated: Measure) {
-    setMeasures(exercise.measures.map((m, i) => (i === index ? updated : m)));
+    let newMeasures = exercise.measures.map((m, i) => (i === index ? updated : m));
+
+    // Setting an explicit tempo on a "through" measure breaks the gradualTempo span
+    if (updated.tempo !== null) {
+      const rm = resolvedMeasures[index];
+      const zone = rm?.accelRitStarting ?? rm?.accelRitEnding;
+      if (zone && zone.type === 'through') {
+        newMeasures = newMeasures.map((m, i) =>
+          i === zone.sourceIndex ? { ...m, gradualTempo: null } : m
+        );
+      }
+    }
+
+    setMeasures(newMeasures);
   }
 
   function clearSpanIfAffected(measures: Measure[], resolvedAtIndex: number): Measure[] {

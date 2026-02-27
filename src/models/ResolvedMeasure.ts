@@ -14,6 +14,7 @@ export interface ResolvedBeat {
   x: number;              // px from measure left edge
   durationMs: number;     // at 100% speed
   startMs: number;        // cumulative from exercise start, at 100% speed
+  hold: number | null;    // hold duration in seconds, or null for normal playback
 }
 
 export interface ResolvedMeasure {

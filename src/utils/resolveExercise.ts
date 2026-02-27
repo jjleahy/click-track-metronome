@@ -42,6 +42,7 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
         x: notePositions[bi].x,
         durationMs,
         startMs,
+        hold: beat.hold,
       };
     });
 
@@ -97,6 +98,70 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
     }
   }
 
+  // Pass 3a: Apply geometric tempo interpolation to gradual tempo spans
+  for (let i = 0; i < measures.length; i++) {
+    const m = measures[i];
+    if (m.gradualTempo === null) continue;
+
+    const gt = m.gradualTempo;
+    const startTempo = tempoMap[i].tempo;
+
+    let endTempo: number;
+    let spanEnd: number; // exclusive: first measure after the span
+
+    if (gt.measureLength === 0) {
+      endTempo = gt.endTempo ?? startTempo;
+      spanEnd = i + 1;
+    } else {
+      const arrivalIndex = i + gt.measureLength;
+      endTempo = arrivalIndex < measures.length
+        ? tempoMap[arrivalIndex].tempo
+        : startTempo;
+      spanEnd = Math.min(arrivalIndex, measures.length);
+    }
+
+    // Collect all beats in span
+    const spanBeats: { rb: ResolvedBeat; denominator: number }[] = [];
+    for (let j = i; j < spanEnd; j++) {
+      const [, denom] = measures[j].meter;
+      for (const rb of resolved[j].beats) {
+        spanBeats.push({ rb, denominator: denom });
+      }
+    }
+
+    const N = spanBeats.length;
+    if (N <= 1) continue;
+
+    const ratio = endTempo / startTempo;
+    for (let k = 0; k < N; k++) {
+      const { rb, denominator } = spanBeats[k];
+      if (rb.hold !== null) continue; // holds override in pass 3b
+      const t = k / (N - 1);
+      const effectiveTempo = startTempo * Math.pow(ratio, t);
+      rb.durationMs = rb.subdivisions * (60000 / effectiveTempo) * (4 / denominator);
+    }
+  }
+
+  // Pass 3b: Override duration for held beats
+  for (const rm of resolved) {
+    for (const rb of rm.beats) {
+      if (rb.hold !== null) {
+        rb.durationMs = rb.hold * 1000;
+      }
+    }
+  }
+
+  // Pass 3c: Recompute all startMs from adjusted durations
+  let cumMs = 0;
+  for (const rm of resolved) {
+    rm.startMs = cumMs;
+    for (const rb of rm.beats) {
+      rb.startMs = cumMs;
+      cumMs += rb.durationMs;
+    }
+    rm.durationMs = cumMs - rm.startMs;
+  }
+
   return resolved;
 }
 
@@ -122,6 +187,7 @@ export function computeLandingTargets(
     if (resolved[i].accelRitEnding !== null) break; // occupied ending zone — stop
     targets.add(i);
     if (resolved[i].accelRitStarting !== null) break; // can't pass through occupied starting zone
+    if (resolved[i].source.tempo !== null) break; // explicit tempo — valid arrival but can't span past
   }
   return targets;
 }
