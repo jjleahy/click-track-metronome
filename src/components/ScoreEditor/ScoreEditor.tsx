@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Measure as MeasureData } from '../../models/Exercise';
+import type { Measure as MeasureData, Beat } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { STAFF_CLEF_WIDTH, TOTAL_HEIGHT } from './staffConstants';
 import { Measure } from './Measure';
 import { StaffClef } from './StaffClef';
+import { AddMeasurePanel } from './AddMeasurePanel';
 
 interface FlatBeat {
   measureIndex: number;
@@ -14,7 +15,7 @@ interface FlatBeat {
 
 const SCROLL_TARGET_FRACTION = 0.3;
 const SCROLL_LOOKAHEAD_BEATS = 8;
-const ADD_BUTTON_WIDTH = 140; // approximate width of "+ Add Measure" button
+const ADD_PANEL_WIDTH = 400; // width of the "Add Measure" panel
 
 function computeScrollSpeed(
   flatBeats: FlatBeat[],
@@ -54,7 +55,8 @@ interface ScoreEditorProps {
   onUpdateMeasure: (index: number, updated: MeasureData) => void;
   onDeleteMeasure: (index: number) => void;
   onInsertAfter: (index: number) => void;
-  onAddMeasure: () => void;
+  measures: MeasureData[];
+  onAddMeasures: (meter: [number, number], beats: Beat[], count: number) => void;
   pendingAccelStart: number | null;
   landingTargets: Set<number> | null;
   onAccelStart: (measureIndex: number) => void;
@@ -74,7 +76,8 @@ export function ScoreEditor({
   onUpdateMeasure,
   onDeleteMeasure,
   onInsertAfter,
-  onAddMeasure,
+  measures,
+  onAddMeasures,
   pendingAccelStart,
   landingTargets,
   onAccelStart,
@@ -124,12 +127,27 @@ export function ScoreEditor({
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Scroll to right end when measures are added
+  const prevMeasureCountRef = useRef(resolvedMeasures.length);
+  useEffect(() => {
+    if (resolvedMeasures.length > prevMeasureCountRef.current) {
+      const el = scrollRef.current;
+      if (el) {
+        // Use requestAnimationFrame so the DOM has updated with the new content width
+        requestAnimationFrame(() => {
+          el.scrollLeft = el.scrollWidth;
+        });
+      }
+    }
+    prevMeasureCountRef.current = resolvedMeasures.length;
+  }, [resolvedMeasures.length]);
+
   // Total content width for the scroll container
   const lastMeasure = resolvedMeasures[resolvedMeasures.length - 1];
   const totalMeasuresWidth = lastMeasure
     ? lastMeasure.xOffset + lastMeasure.width
     : 0;
-  const contentWidth = STAFF_CLEF_WIDTH + totalMeasuresWidth + ADD_BUTTON_WIDTH;
+  const contentWidth = STAFF_CLEF_WIDTH + totalMeasuresWidth + ADD_PANEL_WIDTH;
 
   // Virtualization: only render measures overlapping the visible range + buffer
   const visibleMeasures = useMemo(() => {
@@ -311,14 +329,11 @@ export function ScoreEditor({
             onAccelDelete={onAccelDelete}
           />
         ))}
-        <button
-          className="score-editor__add-button"
-          onClick={onAddMeasure}
-          aria-label="Add measure at end"
-          style={{ left: STAFF_CLEF_WIDTH + totalMeasuresWidth }}
-        >
-          + Add Measure
-        </button>
+        <AddMeasurePanel
+          measures={measures}
+          onAddMeasures={onAddMeasures}
+          style={{ position: 'absolute', left: STAFF_CLEF_WIDTH + totalMeasuresWidth }}
+        />
       </div>
     </section>
   );

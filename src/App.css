@@ -276,15 +276,55 @@
   width: 2.5rem;
 }
 
-.score-editor__add-button {
-  position: absolute;
-  top: 0;
-  padding: 0.5rem 1rem;
-  border: 2px dashed #444;
-  border-radius: 6px;
-  background: transparent;
+/* Add Measure Panel */
+.add-measure-panel {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  box-sizing: border-box;
+}
+
+.add-measure-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+}
+
+.add-measure-panel__count {
+  width: 3.5rem;
+  padding: 0.25rem 0.4rem;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.add-measure-panel__multiply {
+  font-size: 0.95rem;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.add-measure-panel__label {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.add-measure-panel__create {
+  margin-left: auto;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #555;
+  border-radius: 4px;
   color: inherit;
   cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.add-measure-panel__create:hover {
+  background: #dddddd;
+  border-color: #777;
 }
 
 /* Accel/rit row */

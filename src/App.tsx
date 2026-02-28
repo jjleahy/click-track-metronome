@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Exercise, Measure } from './models/Exercise';
+import type { Exercise, Measure, Beat } from './models/Exercise';
 import { useMetronome } from './hooks/useMetronome';
 import { resolveExercise, computeLandingTargets } from './utils/resolveExercise';
 import { defaultBeats } from './utils/subdivisionDefaults';
@@ -226,8 +226,16 @@ export default function App() {
     ]);
   }
 
-  function handleAddMeasure() {
-    handleInsertAfter(exercise.measures.length - 1);
+  function handleAddMeasures(meter: [number, number], beats: Beat[], count: number) {
+    const cleared = clearSpanIfAffected(exercise.measures, exercise.measures.length - 1);
+    const newMeasures: Measure[] = Array.from({ length: count }, () => ({
+      meter: [...meter] as [number, number],
+      beats: beats.map(b => ({ ...b })),
+      tempo: null,
+      rehearsalNumber: null,
+      gradualTempo: null,
+    }));
+    setMeasures([...cleared, ...newMeasures]);
   }
 
   function handleAccelStart(measureIndex: number) {
@@ -363,7 +371,8 @@ export default function App() {
           onUpdateMeasure={handleUpdateMeasure}
           onDeleteMeasure={handleDeleteMeasure}
           onInsertAfter={handleInsertAfter}
-          onAddMeasure={handleAddMeasure}
+          measures={exercise.measures}
+          onAddMeasures={handleAddMeasures}
           loop={loop}
           pendingAccelStart={pendingAccelStart}
           landingTargets={landingTargets}
