@@ -43,11 +43,11 @@ const defaultProps = {
 describe('Metronome', () => {
   it('renders start measure select with labels', () => {
     render(<Metronome {...defaultProps} />);
-    const startSelect = screen.getByLabelText(/start at/i) as HTMLSelectElement;
+    const startSelect = screen.getByLabelText(/start meas/i) as HTMLSelectElement;
     const optionTexts = Array.from(startSelect.options).map((o) => o.text.trim());
-    expect(optionTexts).toContain('m. 1');
-    expect(optionTexts).toContain('m. 2');
-    expect(optionTexts).toContain('m. 3');
+    expect(optionTexts).toContain('1');
+    expect(optionTexts).toContain('2');
+    expect(optionTexts).toContain('3');
   });
 
   it('score tempo display shows resolved tempo for starting measure', () => {
@@ -86,13 +86,15 @@ describe('Metronome', () => {
   it('changing start measure calls onStartMeasureChange', async () => {
     const onStartMeasureChange = vi.fn();
     render(<Metronome {...defaultProps} onStartMeasureChange={onStartMeasureChange} />);
-    await userEvent.selectOptions(screen.getByLabelText(/start at/i), '2');
+    const select = screen.getByLabelText(/start meas/i) as HTMLSelectElement;
+    const option3 = Array.from(select.options).find(o => o.value === '2')!;
+    await userEvent.selectOptions(select, option3);
     expect(onStartMeasureChange).toHaveBeenCalledWith(2);
   });
 
   it('start measure select is disabled during playback', () => {
     render(<Metronome {...defaultProps} isPlaying={true} />);
-    expect(screen.getByLabelText(/start at/i)).toBeDisabled();
+    expect(screen.getByLabelText(/start meas/i)).toBeDisabled();
   });
 
   it('editing percentage calls onPercentageChange', async () => {
