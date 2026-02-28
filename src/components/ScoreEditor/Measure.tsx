@@ -432,7 +432,6 @@ export function Measure({
       {resolved.beats.map((rb, bi) => (
         <input
           key={bi}
-          className="measure__hover-ctrl"
           type="number"
           min={0.1}
           max={9.9}

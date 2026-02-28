@@ -139,6 +139,7 @@ export function Metronome({
           firstSubdivision={firstSubdivision}
           value={scoreTempo}
           isReadOnly
+          ariaLabel="Score tempo"
         />
       </div>
 
@@ -163,6 +164,7 @@ export function Metronome({
           firstSubdivision={firstSubdivision}
           value={effectiveInputStr}
           id="effective-tempo-input"
+          ariaLabel="Effective tempo"
           min={1}
           max={999}
           onChange={(val) => setEffectiveInputStr(val)}

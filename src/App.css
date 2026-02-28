@@ -153,11 +153,21 @@
   line-height: 1;
 }
 
+.beat-label-implied {
+  opacity: 0.4;
+}
+
+.beat-label-implied input::placeholder {
+  color: #213547;
+  opacity: 1;
+}
+
 /* Score editor */
 .score-editor__scroll-container {
   position: relative;
   overflow-x: auto;
   padding-bottom: 0.5rem;
+  scrollbar-color: #555 #ddd
 }
 
 .staff-clef,

@@ -12,6 +12,7 @@ interface BeatLabelProps {
   min?: number;
   max?: number;
   id?: string;
+  ariaLabel?: string;
   onChange?: (val: string) => void;
   onBlur?: () => void;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
@@ -26,6 +27,7 @@ export function BeatLabel({
   min,
   max,
   id,
+  ariaLabel,
   onChange,
   onBlur,
   onKeyDown,
@@ -40,8 +42,10 @@ export function BeatLabel({
     <span>{firstSubdivision}/{denominator}</span>
   );
 
+  const isImplied = value === '' || value === undefined;
+
   return (
-    <span className="beat-label">
+    <span className={`beat-label${isImplied ? ' beat-label-implied' : ''}`} aria-label={isReadOnly ? ariaLabel : undefined}>
       {noteSpan}
       {' = '}
       {isReadOnly ? (
@@ -57,7 +61,7 @@ export function BeatLabel({
           onChange={(e) => onChange?.(e.target.value)}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          aria-label="Tempo"
+          aria-label={ariaLabel ?? 'Tempo'}
         />
       )}
     </span>

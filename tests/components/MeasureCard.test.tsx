@@ -33,6 +33,11 @@ const defaultProps = {
   onChange: vi.fn(),
   onDelete: vi.fn(),
   onInsertAfter: vi.fn(),
+  pendingAccelStart: null as number | null,
+  isLandingTarget: false,
+  onAccelStart: vi.fn(),
+  onAccelLand: vi.fn(),
+  onAccelDelete: vi.fn(),
 };
 
 describe('Measure', () => {
@@ -81,7 +86,7 @@ describe('Measure', () => {
   });
 
   it('subdivision overflow trimming calls onChange with trimmed beats', async () => {
-    // 8/8 [3,3,2] — change first input to 4 → should trim to [4,3]
+    // 8/8 [3,3,2] — change first input to 4 → trims to [4,3] + auto-inserts placeholder [4,3,0]
     const onChange = vi.fn();
     const measure: MeasureData = {
       meter: [8, 8],
@@ -98,7 +103,7 @@ describe('Measure', () => {
     const beatInputs = screen.getAllByRole('spinbutton', { name: /beat \d+ subdivisions/i });
     fireEvent.change(beatInputs[0], { target: { value: '4' } });
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
-    expect(lastCall.beats.map((b) => b.subdivisions)).toEqual([4, 3]);
+    expect(lastCall.beats.map((b) => b.subdivisions)).toEqual([4, 3, 0]);
   });
 
   it('delete button calls onDelete', async () => {
