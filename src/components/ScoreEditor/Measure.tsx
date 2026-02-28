@@ -261,7 +261,8 @@ export function Measure({
       {(() => {
         const zone = resolved.accelRitStarting;
         const left = TIME_SIG_WIDTH + SPACE_AFTER_TIMESIG;
-        const width = resolved.width - left - BARLINE_WIDTH;
+        const filledWidth = resolved.width - left;           // extends through barline to merge with next measure
+        const unfilledWidth = resolved.width - left - BARLINE_WIDTH;
         const isOwnStart = pendingAccelStart === resolved.index;
 
         if (zone !== null) {
@@ -272,7 +273,7 @@ export function Measure({
                 position: 'absolute',
                 top: ACCEL_ROW_TOP,
                 left,
-                width,
+                width: filledWidth,
                 height: ACCEL_ROW_HEIGHT,
                 backgroundColor: ACCEL_COLOR[zone.color],
                 display: 'flex',
@@ -315,7 +316,7 @@ export function Measure({
                 position: 'absolute',
                 top: ACCEL_ROW_TOP,
                 left,
-                width,
+                width: unfilledWidth,
                 height: ACCEL_ROW_HEIGHT,
               }}
               onClick={(e) => { e.stopPropagation(); onAccelLand(resolved.index, 'starting'); }}
@@ -332,7 +333,7 @@ export function Measure({
                 position: 'absolute',
                 top: ACCEL_ROW_TOP,
                 left,
-                width,
+                width: unfilledWidth,
                 height: ACCEL_ROW_HEIGHT,
               }}
               onClick={() => onAccelStart(resolved.index)}
@@ -362,7 +363,7 @@ export function Measure({
         />
       </div>
 
-      {/* Row C: Measure label + delete + insert */}
+      {/* Row C: Measure label (always visible) + action buttons (hover only) */}
       <div style={{
         position: 'absolute',
         top: LABEL_ROW_TOP,
@@ -370,7 +371,7 @@ export function Measure({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: resolved.width - 8, // account for left: 4 offset on both sides
+        width: resolved.width - 8,
       }}>
         <input
           id={`label-${resolved.label}`}
@@ -383,22 +384,32 @@ export function Measure({
           aria-label="Measure number"
           style={{ maxWidth: '4ch' }}
         />
-        <button
-          onClick={onDelete}
-          disabled={!canDelete}
-          aria-label="Delete measure"
-        >
-          X
-        </button>
-        <button onClick={onInsertAfter} aria-label="Insert measure after">
-          +
-        </button>
+        <div className="measure__hover-ctrl measure__row-c-buttons">
+          <button
+            className="measure__icon-btn measure__icon-btn--delete"
+            onClick={onDelete}
+            disabled={!canDelete}
+            aria-label="Delete measure"
+            title="Delete measure"
+          >
+            ✕
+          </button>
+          <button
+            className="measure__icon-btn measure__icon-btn--insert"
+            onClick={onInsertAfter}
+            aria-label="Insert measure after"
+            title="Insert measure after"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {/* Footer: Subdivision inputs — each aligned under its note glyph */}
       {resolved.beats.map((rb, bi) => (
         <input
           key={bi}
+          className="measure__hover-ctrl"
           type="number"
           min={1}
           max={measure.meter[0]}
@@ -413,6 +424,7 @@ export function Measure({
       {resolved.beats.map((rb, bi) => (
         <input
           key={bi}
+          className="measure__hover-ctrl"
           type="number"
           min={0.1}
           max={9.9}

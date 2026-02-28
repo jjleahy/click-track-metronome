@@ -290,7 +290,7 @@ export function ScoreEditor({
         ref={scrollRef}
         onScroll={handleScroll}
         onClick={pendingAccelStart !== null ? onAccelCancel : undefined}
-        style={{ height: TOTAL_HEIGHT }}
+        style={{ height: TOTAL_HEIGHT + 20 }}
       >
         {/* Sizer div establishes the scrollable content width */}
         <div style={{ width: contentWidth, height: 1 }} />

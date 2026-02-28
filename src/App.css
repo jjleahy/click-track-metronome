@@ -171,7 +171,7 @@
 }
 
 .measure--invalid {
-  outline: 2px solid #c0392b;
+  background-color: rgba(192, 57, 43, 0.12);
 }
 
 .measure--active {
@@ -209,6 +209,51 @@
 .measure button:disabled {
   color: #555;
   cursor: not-allowed;
+}
+
+.measure__row-c-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.measure__icon-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.measure button.measure__icon-btn--delete {
+  background: #c0392b;
+  color: white;
+  font-weight: bolder;
+  font-size: 16px;
+}
+
+.measure button.measure__icon-btn--delete:hover:not(:disabled) {
+  background: #e05a4b;
+}
+
+.measure button.measure__icon-btn--delete:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+.measure button.measure__icon-btn--insert {
+  background: #2980b9;
+  color: white;
+  font-size: 20px;
+}
+
+.measure button.measure__icon-btn--insert:hover {
+  background: #4a9fd4;
 }
 
 .subdivision-inputs {
@@ -260,6 +305,22 @@
 
 .accel-bar--empty:hover {
   color: #aaa;
+}
+
+/* Hide editing controls until measure is hovered or has keyboard focus */
+.measure .measure__hover-ctrl,
+.measure .accel-bar--empty {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.measure:hover .measure__hover-ctrl,
+.measure:focus-within .measure__hover-ctrl,
+.measure:hover .accel-bar--empty,
+.measure:focus-within .accel-bar--empty {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Metronome panel */
