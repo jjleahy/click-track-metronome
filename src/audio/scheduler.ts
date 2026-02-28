@@ -2,6 +2,7 @@ import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import type { SoundConfig, SoundType } from '../models/SoundConfig';
 import { DEFAULT_SOUND_CONFIG } from '../models/SoundConfig';
 import { computeSubBeatCount } from '../utils/subdivisionPlayback';
+import { SOUND_PARAMS } from './soundParams';
 
 interface SchedulerOptions {
   resolvedMeasures: ResolvedMeasure[];
@@ -17,13 +18,6 @@ interface SchedulerOptions {
   onEnd: () => void;  // called when playback reaches the end and loop is false
 }
 
-// Sound parameters per type
-const SOUND_PARAMS: Record<SoundType, { freq: number; gain: number; dur: number } | null> = {
-  emphasis: { freq: 1000, gain: 0.5, dur: 0.04 },
-  standard: { freq: 800,  gain: 0.3, dur: 0.04 },
-  click:    { freq: 400,  gain: 0.2, dur: 0.015 },
-  none:     null,
-};
 
 export class MetronomeScheduler {
   private audioCtx: AudioContext;
@@ -73,7 +67,7 @@ export class MetronomeScheduler {
         const prepBeatDuration = (firstBeatDurationMs / 1000) / (this.percentage / 100);
         for (let i = 0; i < this.prepBeats; i++) {
           const t = this.nextClickTime + i * prepBeatDuration;
-          this.playPrepClick(t);
+          this.playSound(t, this.soundConfig.prepBeat);
         }
         this.nextClickTime += this.prepBeats * prepBeatDuration;
       }
@@ -174,34 +168,22 @@ export class MetronomeScheduler {
     return true;
   }
 
-  private playPrepClick(time: number) {
-    const osc = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioCtx.destination);
-
-    osc.frequency.value = 600;
-    gain.gain.setValueAtTime(0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
-
-    osc.start(time);
-    osc.stop(time + 0.025);
-  }
-
   private playSound(time: number, type: SoundType) {
-    const params = SOUND_PARAMS[type];
-    if (!params) return; // 'none' — silent
+    const partials = SOUND_PARAMS[type];
+    if (!partials) return; // 'none' — silent
 
-    const osc = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(this.audioCtx.destination);
+    for (const p of partials) {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
 
-    osc.frequency.value = params.freq;
-    gain.gain.setValueAtTime(params.gain, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + params.dur);
+      osc.frequency.value = p.freq;
+      gain.gain.setValueAtTime(p.gain, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + p.dur);
 
-    osc.start(time);
-    osc.stop(time + params.dur);
+      osc.start(time);
+      osc.stop(time + p.dur);
+    }
   }
 }

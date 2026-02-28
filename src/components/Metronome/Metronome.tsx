@@ -190,10 +190,10 @@ export function Metronome({
         />
       </div>
 
-      {(['downbeat', 'bigBeat', 'subdivision'] as const).map((role) => (
+      {(['downbeat', 'bigBeat', 'subdivision', 'prepBeat'] as const).map((role) => (
         <div key={role}>
           <label htmlFor={`sound-${role}`}>
-            {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : 'Subdivision:'}
+            {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : role === 'subdivision' ? 'Subdivision:' : 'Prep beat:'}
           </label>{' '}
           <select
             id={`sound-${role}`}
@@ -203,9 +203,30 @@ export function Metronome({
             }
             aria-label={`${role} sound`}
           >
-            <option value="emphasis">Emphasis</option>
-            <option value="standard">Standard</option>
-            <option value="click">Click</option>
+            <optgroup label="Emphasis">
+              <option value="emphasis">Emphasis</option>
+              <option value="emphasisTone">Emphasis Tone</option>
+              <option value="emphasisThin">Emphasis Thin</option>
+            </optgroup>
+            <optgroup label="Standard">
+              <option value="standard">Standard</option>
+              <option value="standardTone">Standard Tone</option>
+              <option value="standardWood">Standard Wood</option>
+            </optgroup>
+            <optgroup label="Low">
+              <option value="low">Low</option>
+              <option value="lowTone">Low Tone</option>
+              <option value="lowThud">Low Thud</option>
+            </optgroup>
+            <optgroup label="Click">
+              <option value="quietClick">Quiet Click</option>
+              <option value="warmClick">Warm Click</option>
+              <option value="tick">Tick</option>
+            </optgroup>
+            <optgroup label="Special">
+              <option value="straw">Straw</option>
+              <option value="bell">Bell</option>
+            </optgroup>
             <option value="none">None</option>
           </select>
         </div>
