@@ -2,7 +2,7 @@
 
 A free, open-source web app for musicians to map the full rhythmic structure of complex pieces — time signature changes, tempo changes, accelerandi/ritardandi, and fermatas — and play them back with a click track that follows the score.
 
-**Live app:** _coming soon_
+**Live app:** https://jjleahy.github.io/click-track-metronome/
 
 ## Development
 
@@ -18,7 +18,6 @@ npm run build    # production build → dist/
 - React + TypeScript, Vite
 - Vitest + React Testing Library
 - Bravura font for music notation glyphs
-- Hosted on Cloudflare Pages
 
 ## License
 
