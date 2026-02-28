@@ -64,14 +64,16 @@ const HIGHLIGHT_COLOR = '#646cff';
 
 export function NoteGlyph({ noteType, x, subdivisions, isActive }: NoteGlyphProps) {
   if (noteType === 'fallback') {
+    if (subdivisions === 0) return null;
     return (
       <span
         style={{
           position: 'absolute',
           left: x,
-          top: NOTE_Y - 30,
-          fontSize: '0.75rem',
-          color: isActive ? HIGHLIGHT_COLOR : '#888',
+          top: NOTE_Y - 64,
+          fontSize: '3.0rem',
+          color: isActive ? HIGHLIGHT_COLOR : '#444',
+          fontWeight: 'bold'
         }}
       >
         {subdivisions}

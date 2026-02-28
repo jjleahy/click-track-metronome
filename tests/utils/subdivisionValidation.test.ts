@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isMeasureValid, applySubdivisionChange } from '../../src/utils/subdivisionValidation';
+import {
+  isMeasureValid,
+  applySubdivisionChange,
+  measureValidationStatus,
+  shouldAutoInsertBeat,
+} from '../../src/utils/subdivisionValidation';
 import type { Beat } from '../../src/models/Exercise';
 
 function beats(...subs: number[]): Beat[] {
@@ -67,5 +72,46 @@ describe('applySubdivisionChange', () => {
     const result = applySubdivisionChange(input, 0, 3, 6);
     expect(result[0].hold).toBe(2.5);
     expect(result[1].hold).toBe(null);
+  });
+});
+
+describe('measureValidationStatus', () => {
+  it('returns valid when sum equals numerator', () => {
+    expect(measureValidationStatus(beats(1, 1, 1, 1), 4)).toBe('valid');
+  });
+
+  it('returns underfill when sum < numerator', () => {
+    expect(measureValidationStatus(beats(1, 1), 4)).toBe('underfill');
+  });
+
+  it('returns overfill when sum > numerator', () => {
+    expect(measureValidationStatus(beats(3, 3), 4)).toBe('overfill');
+  });
+
+  it('returns underfill when any beat has subdivisions === 0', () => {
+    // sum is 4 but a beat is 0, so treat as underfill
+    expect(measureValidationStatus(beats(0, 1, 1, 1, 1), 4)).toBe('underfill');
+  });
+
+  it('returns underfill for empty beats array', () => {
+    expect(measureValidationStatus([], 4)).toBe('underfill');
+  });
+});
+
+describe('shouldAutoInsertBeat', () => {
+  it('returns true when underfilled with no zero-beats', () => {
+    expect(shouldAutoInsertBeat(beats(1, 1), 4)).toBe(true);
+  });
+
+  it('returns false when underfilled but a beat is already 0', () => {
+    expect(shouldAutoInsertBeat(beats(0, 1, 1), 4)).toBe(false);
+  });
+
+  it('returns false when measure is valid', () => {
+    expect(shouldAutoInsertBeat(beats(1, 1, 1, 1), 4)).toBe(false);
+  });
+
+  it('returns false when measure is overfilled', () => {
+    expect(shouldAutoInsertBeat(beats(3, 3), 4)).toBe(false);
   });
 });

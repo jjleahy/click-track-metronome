@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Measure as MeasureData } from '../../models/Exercise';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { defaultBeats } from '../../utils/subdivisionDefaults';
-import { isMeasureValid, applySubdivisionChange } from '../../utils/subdivisionValidation';
+import { isMeasureValid, applySubdivisionChange, shouldAutoInsertBeat } from '../../utils/subdivisionValidation';
 import { toDisplayTempo, toInternalTempo } from '../../utils/tempoConversion';
 import { BeatLabel } from './BeatLabel';
 import {
@@ -150,7 +150,15 @@ export function Measure({
   function handleSubdivisionChange(beatIndex: number, rawValue: string) {
     const parsed = parseInt(rawValue, 10);
     const newValue = isNaN(parsed) || parsed < 0 ? 0 : parsed;
-    const newBeats = applySubdivisionChange(measure.beats, beatIndex, newValue, measure.meter[0]);
+    let newBeats = applySubdivisionChange(measure.beats, beatIndex, newValue, measure.meter[0]);
+    // Auto-insert a placeholder beat when underfilled and no beat is already empty
+    if (shouldAutoInsertBeat(newBeats, measure.meter[0])) {
+      newBeats.push({ subdivisions: 0, hold: null });
+    }
+    // Strip lingering 0-beats when the measure is valid without them
+    if (isMeasureValid(newBeats.filter(b => b.subdivisions > 0), measure.meter[0])) {
+      newBeats = newBeats.filter(b => b.subdivisions > 0);
+    }
     onChange({ ...measure, beats: newBeats });
   }
 
@@ -411,9 +419,9 @@ export function Measure({
           key={bi}
           className="measure__hover-ctrl"
           type="number"
-          min={1}
+          min={0}
           max={measure.meter[0]}
-          value={measure.beats[bi].subdivisions}
+          value={measure.beats[bi].subdivisions === 0 ? '' : measure.beats[bi].subdivisions}
           onChange={(e) => handleSubdivisionChange(bi, e.target.value)}
           aria-label={`Beat ${bi + 1} subdivisions`}
           style={{ position: 'absolute', top: SUBDIV_ROW_TOP, left: rb.x }}
