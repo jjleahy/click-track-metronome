@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { toDisplayTempo, tempoFromBeatDuration } from '../../utils/tempoConversion';
 import { BeatLabel } from '../ScoreEditor/BeatLabel';
@@ -75,32 +75,63 @@ export function Metronome({
 
   const [pctInputStr, setPctInputStr] = useState(String(percentage));
   const [effectiveInputStr, setEffectiveInputStr] = useState(String(effectiveTempo));
+  const pctFocused = useRef(false);
+  const effectiveFocused = useRef(false);
+  const lastCommittedPct = useRef(percentage);
+  const lastCommittedEffective = useRef(effectiveTempo);
 
-  // Sync inputs when score tempo, percentage, or start measure changes
+  // Sync inputs when score tempo or percentage changes, but not while the user is typing
   useEffect(() => {
-    setPctInputStr(String(percentage));
-    setEffectiveInputStr(String(Math.round(scoreTempo * percentage / 100)));
+    if (!pctFocused.current) {
+      setPctInputStr(String(percentage));
+      lastCommittedPct.current = percentage;
+    }
+    if (!effectiveFocused.current) {
+      const eff = Math.round(scoreTempo * percentage / 100);
+      setEffectiveInputStr(String(eff));
+      lastCommittedEffective.current = eff;
+    }
   }, [percentage, scoreTempo]);
 
-  function commitPercentage() {
-    const parsed = parseInt(pctInputStr, 10);
+  function commitPercentage(str = pctInputStr) {
+    const parsed = parseInt(str, 10);
     if (!isNaN(parsed)) {
       const clamped = Math.max(10, Math.min(200, parsed));
+      lastCommittedPct.current = clamped;
       onPercentageChange(clamped);
     } else {
       setPctInputStr(String(percentage));
     }
   }
 
-  function commitEffective() {
-    const parsed = parseInt(effectiveInputStr, 10);
+  function commitEffective(str = effectiveInputStr) {
+    const parsed = parseInt(str, 10);
     // Use current score tempo (which reflects the current beat during playback)
     if (!isNaN(parsed) && parsed >= 1 && scoreTempo > 0) {
+      lastCommittedEffective.current = parsed;
       const newPct = Math.round((parsed / scoreTempo) * 100);
       const clamped = Math.max(10, Math.min(200, newPct));
       onPercentageChange(clamped);
     } else {
       setEffectiveInputStr(String(effectiveTempo));
+    }
+  }
+
+  function handlePctChange(val: string) {
+    setPctInputStr(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed)) {
+      const delta = Math.abs(parsed - lastCommittedPct.current);
+      if (delta <= 1) commitPercentage(val);
+    }
+  }
+
+  function handleEffectiveChange(val: string) {
+    setEffectiveInputStr(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed)) {
+      const delta = Math.abs(parsed - lastCommittedEffective.current);
+      if (delta <= 1) commitEffective(val);
     }
   }
 
@@ -118,8 +149,9 @@ export function Metronome({
               ariaLabel="Effective tempo"
               min={1}
               max={999}
-              onChange={(val) => setEffectiveInputStr(val)}
-              onBlur={commitEffective}
+              onChange={handleEffectiveChange}
+              onFocus={() => { effectiveFocused.current = true; }}
+              onBlur={() => { effectiveFocused.current = false; commitEffective(); }}
               onKeyDown={(e) => { if (e.key === 'Enter') commitEffective(); }}
             />
           </span>
@@ -144,8 +176,9 @@ export function Metronome({
             min={10}
             max={200}
             value={pctInputStr}
-            onChange={(e) => setPctInputStr(e.target.value)}
-            onBlur={commitPercentage}
+            onChange={(e) => handlePctChange(e.target.value)}
+            onFocus={() => { pctFocused.current = true; }}
+            onBlur={() => { pctFocused.current = false; commitPercentage(); }}
             onKeyDown={(e) => { if (e.key === 'Enter') commitPercentage(); }}
             aria-label="Speed percentage"
           />%
