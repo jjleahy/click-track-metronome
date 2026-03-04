@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
-import { toDisplayTempo } from '../../utils/tempoConversion';
+import { toDisplayTempo, tempoFromBeatDuration } from '../../utils/tempoConversion';
 import { BeatLabel } from '../ScoreEditor/BeatLabel';
 import type { SoundConfig, SoundType } from '../../models/SoundConfig';
 
@@ -13,6 +13,8 @@ interface MetronomeProps {
   loop: boolean;
   onLoopChange: (loop: boolean) => void;
   isPlaying: boolean;
+  currentMeasure: number | null;
+  currentBeat: number | null;
   onToggle: () => void;
   hasInvalidMeasure: boolean;
   percentage: number;
@@ -34,6 +36,8 @@ export function Metronome({
   loop,
   onLoopChange,
   isPlaying,
+  currentMeasure,
+  currentBeat,
   onToggle,
   hasInvalidMeasure,
   percentage,
@@ -45,12 +49,28 @@ export function Metronome({
   subdivisionLevel,
   onSubdivisionLevelChange,
 }: MetronomeProps) {
-  const startMeasure = resolvedMeasures[startMeasureIndex];
-  const denominator = startMeasure?.source.meter[1] ?? 4;
-  const firstSubdivision = startMeasure?.source.beats[0]?.subdivisions ?? 1;
-  const internalTempo = startMeasure?.tempo ?? 80;
-  const scoreTempo = toDisplayTempo(internalTempo, denominator, firstSubdivision);
+  // Determine which measure to derive tempo display from:
+  // while playing, use the current beat's measure; when stopped, use start measure
+  const displayMeasureIndex = currentMeasure ?? startMeasureIndex;
+  const displayMeasure = resolvedMeasures[displayMeasureIndex];
+  const denominator = displayMeasure?.source.meter[1] ?? 4;
+  const firstSubdivision = displayMeasure?.source.beats[0]?.subdivisions ?? 1;
 
+  // Compute internal tempo from the current beat's tempoDurationMs during playback
+  let internalTempo: number;
+  if (currentMeasure !== null && currentBeat !== null) {
+    const rm = resolvedMeasures[currentMeasure];
+    const rb = rm?.beats[currentBeat];
+    if (rm && rb) {
+      internalTempo = tempoFromBeatDuration(rb.tempoDurationMs, rb.subdivisions, rm.meter[1]);
+    } else {
+      internalTempo = displayMeasure?.effectiveTempo ?? 80;
+    }
+  } else {
+    internalTempo = displayMeasure?.effectiveTempo ?? 80;
+  }
+
+  const scoreTempo = toDisplayTempo(internalTempo, denominator, firstSubdivision);
   const effectiveTempo = Math.round(scoreTempo * percentage / 100);
 
   const [pctInputStr, setPctInputStr] = useState(String(percentage));
@@ -74,6 +94,7 @@ export function Metronome({
 
   function commitEffective() {
     const parsed = parseInt(effectiveInputStr, 10);
+    // Use current score tempo (which reflects the current beat during playback)
     if (!isNaN(parsed) && parsed >= 1 && scoreTempo > 0) {
       const newPct = Math.round((parsed / scoreTempo) * 100);
       const clamped = Math.max(10, Math.min(200, newPct));

@@ -68,7 +68,7 @@ export function Measure({
   const denominator = resolved.meter[1];
   const firstSubdivision = measure.beats.length > 0 ? measure.beats[0].subdivisions : 1;
 
-  const displayResolvedTempo = toDisplayTempo(resolved.tempo, denominator, firstSubdivision);
+  const displayResolvedTempo = toDisplayTempo(resolved.effectiveTempo, denominator, firstSubdivision);
 
   const [tempoInputStr, setTempoInputStr] = useState(
     measure.tempo !== null ? String(toDisplayTempo(measure.tempo, denominator, firstSubdivision)) : ''

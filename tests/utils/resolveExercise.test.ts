@@ -377,6 +377,118 @@ describe('gradual tempo and hold timing', () => {
     }
   });
 
+  it('tempoDurationMs equals durationMs for non-held beats', () => {
+    const measures = [makeMeasure({ tempo: 120 })];
+    const result = resolveExercise(measures);
+    for (const beat of result[0].beats) {
+      expect(beat.tempoDurationMs).toBe(beat.durationMs);
+    }
+  });
+
+  it('tempoDurationMs is unaffected by holds', () => {
+    const measures = [
+      makeMeasure({
+        tempo: 120,
+        beats: [
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 2.5 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+        ],
+      }),
+    ];
+    const result = resolveExercise(measures);
+
+    // tempoDurationMs should be 500ms for all beats (120 BPM, quarter notes)
+    for (const beat of result[0].beats) {
+      expect(beat.tempoDurationMs).toBe(500);
+    }
+    // durationMs should be overridden for held beat
+    expect(result[0].beats[1].durationMs).toBe(2500);
+  });
+
+  it('tempoDurationMs reflects geometric interpolation even for held beats', () => {
+    const measures = [
+      makeMeasure({
+        tempo: 100,
+        gradualTempo: { measureLength: 1, endTempo: null },
+        beats: [
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: 3.0 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+        ],
+      }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // Beat 1: durationMs=3000 (hold), but tempoDurationMs should be geometric
+    expect(result[0].beats[1].durationMs).toBe(3000);
+    // tempoDurationMs: t=1/3, tempo=100*2^(1/3)≈125.99, dur≈476.2
+    expect(result[0].beats[1].tempoDurationMs).toBeCloseTo(476.22, 0);
+  });
+
+  it('effectiveTempo equals base tempo for measures outside accel/rit spans', () => {
+    const measures = [
+      makeMeasure({ tempo: 120 }),
+      makeMeasure({ tempo: null }),
+    ];
+    const result = resolveExercise(measures);
+
+    expect(result[0].effectiveTempo).toBe(120);
+    expect(result[1].effectiveTempo).toBe(120);
+  });
+
+  it('effectiveTempo reflects interpolated tempo in multi-measure accel span', () => {
+    // 4/4 at 60→120 over 2 measures (8 beats), arrival at m2
+    const measures = [
+      makeMeasure({ tempo: 60, gradualTempo: { measureLength: 2, endTempo: null } }),
+      makeMeasure({ tempo: null }),
+      makeMeasure({ tempo: 120 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // Measure 0: first beat at t=0, effectiveTempo=60
+    expect(result[0].effectiveTempo).toBeCloseTo(60, 0);
+    // Measure 1: first beat at t=4/7 (beat index 4 of 8, N-1=7)
+    // tempo = 60 * (120/60)^(4/7) = 60 * 2^(4/7) ≈ 60 * 1.4859 ≈ 89.16
+    expect(result[1].effectiveTempo).toBeCloseTo(89.16, 0);
+    // Measure 2 (arrival): not in span, effectiveTempo=120
+    expect(result[2].effectiveTempo).toBe(120);
+  });
+
+  it('effectiveTempo is unaffected by holds in the measure', () => {
+    const measures = [
+      makeMeasure({
+        tempo: 100,
+        gradualTempo: { measureLength: 1, endTempo: null },
+        beats: [
+          { subdivisions: 1, hold: 5.0 },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+          { subdivisions: 1, hold: null },
+        ],
+      }),
+      makeMeasure({ tempo: 200 }),
+    ];
+    const result = resolveExercise(measures);
+
+    // effectiveTempo uses tempoDurationMs of first beat, not hold duration
+    // First beat at t=0, effectiveTempo=100
+    expect(result[0].effectiveTempo).toBeCloseTo(100, 0);
+  });
+
+  it('effectiveTempo for single-measure accel (measureLength=0)', () => {
+    const measures = [
+      makeMeasure({ tempo: 80, gradualTempo: { measureLength: 0, endTempo: 160 } }),
+    ];
+    const result = resolveExercise(measures);
+
+    // First beat at t=0, effectiveTempo=80
+    expect(result[0].effectiveTempo).toBeCloseTo(80, 0);
+  });
+
   it('propagates hold field to ResolvedBeat', () => {
     const measures = [
       makeMeasure({

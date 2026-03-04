@@ -391,6 +391,8 @@ export default function App() {
           loop={loop}
           onLoopChange={setLoop}
           isPlaying={isPlaying}
+          currentMeasure={currentMeasure}
+          currentBeat={currentBeat}
           onToggle={toggle}
           hasInvalidMeasure={hasInvalidMeasure}
           percentage={percentage}
