@@ -347,7 +347,7 @@
 
 .accel-bar--empty {
   color: #777;
-  font-size: 0.65rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   padding-left: 4px;

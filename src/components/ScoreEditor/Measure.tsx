@@ -46,9 +46,15 @@ const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just belo
 const HOLD_ROW_TOP = SUBDIV_ROW_TOP + 30;
 
 const ACCEL_COLOR: Record<AccelRitZone['color'], string> = {
-  red: '#e74c3c',
-  blue: '#3498db',
-  gray: '#888',
+  red: '#f0a8a0',
+  blue: '#a0c4e8',
+  gray: '#bbb',
+};
+
+const ACCEL_LABEL: Record<AccelRitZone['color'], string> = {
+  red: 'accel.',
+  blue: 'rit.',
+  gray: '(??)',
 };
 
 export function Measure({
@@ -246,6 +252,7 @@ export function Measure({
               : TIME_SIG_WIDTH,
             height: ACCEL_ROW_HEIGHT,
             backgroundColor: ACCEL_COLOR[resolved.accelRitEnding.color],
+            borderRadius: resolved.accelRitEnding.type === 'end' ? '0 4px 4px 0' : '0',
           }}
           onDoubleClick={() => onAccelDelete(resolved.accelRitEnding!.sourceIndex)}
           title="Double-click to delete accel/rit"
@@ -274,6 +281,9 @@ export function Measure({
         const isOwnStart = pendingAccelStart === resolved.index;
 
         if (zone !== null) {
+          const borderRadius = zone.type === 'single' ? '4px'
+            : zone.type === 'start' ? '4px 0 0 4px'
+            : '0';
           return (
             <div
               className="accel-bar accel-bar--filled"
@@ -284,12 +294,22 @@ export function Measure({
                 width: filledWidth,
                 height: ACCEL_ROW_HEIGHT,
                 backgroundColor: ACCEL_COLOR[zone.color],
+                borderRadius,
                 display: 'flex',
                 alignItems: 'center',
+                fontSize: 18,
+                fontStyle: 'italic',
+                color: '#000',
+                paddingLeft: 6,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
               }}
               onDoubleClick={() => onAccelDelete(zone.sourceIndex)}
               title="Double-click to delete accel/rit"
             >
+              {zone.type === 'start' && <>{ACCEL_LABEL[zone.color]}<span style={{ fontStyle: 'normal' }}> - - -</span></>}
+              {zone.type === 'through' && <>- - - <span>{ACCEL_LABEL[zone.color]}</span> - - -</>}
+              {zone.type === 'single' && <>{ACCEL_LABEL[zone.color]}</>}
               {zone.type === 'single' && (
                 <input
                   type="number"
@@ -309,7 +329,7 @@ export function Measure({
                   }}
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Arrival tempo"
-                  style={{ position: 'absolute', right: 4, top: 4, width: '3.5rem' }}
+                  style={{ position: 'absolute', right: 4, top: 4, width: '3.5rem', fontSize: 18 }}
                 />
               )}
             </div>
