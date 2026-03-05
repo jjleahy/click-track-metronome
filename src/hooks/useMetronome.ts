@@ -31,6 +31,7 @@ export function useMetronome({
 
   const schedulerRef = useRef<MetronomeScheduler | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const percentageRef = useRef(percentage);
 
   const stop = useCallback(() => {
     schedulerRef.current?.stop();
@@ -54,7 +55,7 @@ export function useMetronome({
       startMeasureIndex,
       endMeasureIndex,
       loop,
-      percentage,
+      percentage: percentageRef.current,
       prepBeats,
       soundConfig,
       subdivisionLevel,
@@ -76,8 +77,10 @@ export function useMetronome({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, prepBeats, soundConfig, subdivisionLevel, stop]);
 
-  // Propagate percentage changes to the running scheduler without restarting
+  // Keep ref in sync so start() always reads the latest value;
+  // also propagate to a running scheduler without restarting
   useEffect(() => {
+    percentageRef.current = percentage;
     schedulerRef.current?.setPercentage(percentage);
   }, [percentage]);
 
