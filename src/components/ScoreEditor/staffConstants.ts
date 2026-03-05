@@ -14,19 +14,19 @@ export const STAFF_SPACE = STAFF_HEIGHT / (STAFF_LINES - 1); // 20px — derived
 //   Row C (LABEL_ROW_TOP):  measure number + edit controls
 
 export const ACCEL_ROW_TOP = 0;       // px from component top
-export const ACCEL_ROW_HEIGHT = 30;   // px — height of the accel/rit row
-export const TEMPO_ROW_TOP = 40;      // px — one text-row below accel
-export const LABEL_ROW_TOP = 85;      // px — breathing room before staff top
+export const ACCEL_ROW_HEIGHT = 36;   // px — height of the accel/rit row
+export const TEMPO_ROW_TOP = 46;      // px — one text-row below accel
+export const LABEL_ROW_TOP = 91;      // px — breathing room before staff top
 
 // Distance from component top to the top staff line.
-// LABEL_ROW_TOP (~75) + input height (~25) + small gap = 120.
-export const HEADER_HEIGHT = 120;     // px
+// LABEL_ROW_TOP (~91) + input height (~25) + small gap = 126.
+export const HEADER_HEIGHT = 126;     // px
 
 // --- Footer zone (below the staff) ---
 // Time sig and subdivision inputs live here.
 export const FOOTER_HEIGHT = 80;      // px below bottom staff line
 
-export const TOTAL_HEIGHT = HEADER_HEIGHT + STAFF_HEIGHT + FOOTER_HEIGHT; // 280px
+export const TOTAL_HEIGHT = HEADER_HEIGHT + STAFF_HEIGHT + FOOTER_HEIGHT; // 286px
 
 // --- Notation sizing ---
 export const NOTATION_FONT_SIZE = STAFF_SPACE * 4;  // 80px — standard SMuFL sizing for staff-sized glyphs

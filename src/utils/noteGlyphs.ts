@@ -32,6 +32,9 @@ export const FLAG_16TH_UP = '\uE242';
 // --- Augmentation dot ---
 export const AUG_DOT = '\uE1E7';
 
+// --- Holds and pauses ---
+export const FERMATA_BELOW = '\uE4C1';
+
 // --- Individual notes (for inline tempo labels, SMuFL U+E1D0–U+E1DF) ---
 export const NOTE_WHOLE      = '\uE1D2'; // whole note
 export const NOTE_HALF_UP    = '\uE1D3'; // half note stem up

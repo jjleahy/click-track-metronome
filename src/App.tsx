@@ -131,12 +131,21 @@ export default function App() {
   const [soundConfig, setSoundConfig] = useState<SoundConfig>(DEFAULT_SOUND_CONFIG);
   const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
   const [pendingAccelStart, setPendingAccelStart] = useState<number | null>(null);
+  const [activeFermata, setActiveFermata] = useState<{ measureIndex: number; beatIndex: number } | null>(null);
+  const [scoreZoom, setScoreZoom] = useState(() =>
+    parseFloat(localStorage.getItem('scoreZoom') ?? '1')
+  );
+
+  useEffect(() => {
+    localStorage.setItem('scoreZoom', String(scoreZoom));
+  }, [scoreZoom]);
 
   // Reset playback-range state when switching exercises
   useEffect(() => {
     setStartMeasureIndex(0);
     setEndMeasureIndex(null);
     setPendingAccelStart(null);
+    setActiveFermata(null);
   }, [activeExerciseId]);
 
   const resolvedMeasures = useMemo(
@@ -380,6 +389,11 @@ export default function App() {
           onAccelLand={handleAccelLand}
           onAccelCancel={handleAccelCancel}
           onAccelDelete={handleAccelDelete}
+          activeFermata={activeFermata}
+          onFermataActivate={(mi, bi) => setActiveFermata({ measureIndex: mi, beatIndex: bi })}
+          onFermataClear={() => setActiveFermata(null)}
+          zoom={scoreZoom}
+          onZoomChange={setScoreZoom}
         />
 
         <Metronome
@@ -391,6 +405,8 @@ export default function App() {
           loop={loop}
           onLoopChange={setLoop}
           isPlaying={isPlaying}
+          currentMeasure={currentMeasure}
+          currentBeat={currentBeat}
           onToggle={toggle}
           hasInvalidMeasure={hasInvalidMeasure}
           percentage={percentage}

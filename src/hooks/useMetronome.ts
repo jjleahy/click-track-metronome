@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import { MetronomeScheduler } from '../audio/scheduler';
 import type { SoundConfig } from '../models/SoundConfig';
@@ -31,6 +31,7 @@ export function useMetronome({
 
   const schedulerRef = useRef<MetronomeScheduler | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const percentageRef = useRef(percentage);
 
   const stop = useCallback(() => {
     schedulerRef.current?.stop();
@@ -54,7 +55,7 @@ export function useMetronome({
       startMeasureIndex,
       endMeasureIndex,
       loop,
-      percentage,
+      percentage: percentageRef.current,
       prepBeats,
       soundConfig,
       subdivisionLevel,
@@ -72,7 +73,16 @@ export function useMetronome({
     });
     schedulerRef.current.start();
     setIsPlaying(true);
-  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, percentage, prepBeats, soundConfig, subdivisionLevel, stop]);
+  // percentage is excluded: changes propagate via setPercentage() without restarting
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, prepBeats, soundConfig, subdivisionLevel, stop]);
+
+  // Keep ref in sync so start() always reads the latest value;
+  // also propagate to a running scheduler without restarting
+  useEffect(() => {
+    percentageRef.current = percentage;
+    schedulerRef.current?.setPercentage(percentage);
+  }, [percentage]);
 
   const toggle = useCallback(() => {
     if (isPlaying) stop();

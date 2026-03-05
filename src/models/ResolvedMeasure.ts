@@ -12,7 +12,8 @@ export interface ResolvedBeat {
   subdivisions: number;
   noteType: NoteType;
   x: number;              // px from measure left edge
-  durationMs: number;     // at 100% speed
+  tempoDurationMs: number; // tempo-derived duration at 100% speed, ignoring holds
+  durationMs: number;     // actual playback duration at 100% speed (= tempoDurationMs unless hold overrides)
   startMs: number;        // cumulative from exercise start, at 100% speed
   hold: number | null;    // hold duration in seconds, or null for normal playback
   geoRatio: number | null; // per-beat geometric tempo multiplier within a gradual span; null outside any span
@@ -23,6 +24,7 @@ export interface ResolvedMeasure {
   source: Measure;
   meter: [number, number];
   tempo: number;
+  effectiveTempo: number;  // internal (quarter-note) tempo at first beat, accounting for accel/rit interpolation
   tempoImplied: boolean;
   label: string | number;
   labelImplied: boolean;

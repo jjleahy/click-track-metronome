@@ -3,6 +3,7 @@ import type { ResolvedMeasure, ResolvedBeat, AccelRitZone } from '../models/Reso
 import { resolveTempoMap } from './tempoMap';
 import { resolveMeasureLabels } from './measureLabels';
 import { computeNotePositions, computeMeasureWidth } from './noteGlyphs';
+import { tempoFromBeatDuration } from './tempoConversion';
 
 /**
  * Resolve all derived data for an exercise's measures in a single pass.
@@ -31,16 +32,17 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
       // Duration formula: subdivisions * (60000 / tempo) * (4 / denominator)
       // This converts quarter-note BPM to ms per subdivision unit, then scales
       // by the number of subdivision units in this beat.
-      const durationMs = beat.subdivisions * (60000 / tempo) * (4 / denominator);
+      const tempoDurationMs = beat.subdivisions * (60000 / tempo) * (4 / denominator);
       const startMs = cumulativeMs;
-      cumulativeMs += durationMs;
+      cumulativeMs += tempoDurationMs;
 
       return {
         index: bi,
         subdivisions: beat.subdivisions,
         noteType: notePositions[bi].noteType,
         x: notePositions[bi].x,
-        durationMs,
+        tempoDurationMs,
+        durationMs: tempoDurationMs,
         startMs,
         hold: beat.hold,
         geoRatio: null,
@@ -55,6 +57,7 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
       source: m,
       meter: m.meter,
       tempo,
+      effectiveTempo: tempo,
       tempoImplied: m.tempo === null,
       label: labels[i],
       labelImplied: m.rehearsalNumber === null,
@@ -121,12 +124,12 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
       spanEnd = Math.min(arrivalIndex, measures.length);
     }
 
-    // Collect all beats in span
-    const spanBeats: { rb: ResolvedBeat; denominator: number }[] = [];
+    // Collect all beats in span, tracking which measure each beat belongs to
+    const spanBeats: { rb: ResolvedBeat; denominator: number; measureIdx: number }[] = [];
     for (let j = i; j < spanEnd; j++) {
       const [, denom] = measures[j].meter;
       for (const rb of resolved[j].beats) {
-        spanBeats.push({ rb, denominator: denom });
+        spanBeats.push({ rb, denominator: denom, measureIdx: j });
       }
     }
 
@@ -138,19 +141,30 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
     for (let k = 0; k < N; k++) {
       const { rb, denominator } = spanBeats[k];
       rb.geoRatio = perBeatRatio;
-      if (rb.hold !== null) continue; // holds override in pass 3b
       const t = k / (N - 1);
-      const effectiveTempo = startTempo * Math.pow(ratio, t);
-      rb.durationMs = rb.subdivisions * (60000 / effectiveTempo) * (4 / denominator);
+      const interpolatedTempo = startTempo * Math.pow(ratio, t);
+      // Always set tempoDurationMs from interpolated tempo (ignores holds)
+      rb.tempoDurationMs = rb.subdivisions * (60000 / interpolatedTempo) * (4 / denominator);
+    }
+
+    // Update effectiveTempo for each measure in the span using its first beat's tempoDurationMs
+    for (let j = i; j < spanEnd; j++) {
+      const rm = resolved[j];
+      const firstBeat = rm.beats[0];
+      if (firstBeat) {
+        rm.effectiveTempo = tempoFromBeatDuration(
+          firstBeat.tempoDurationMs,
+          firstBeat.subdivisions,
+          rm.meter[1],
+        );
+      }
     }
   }
 
-  // Pass 3b: Override duration for held beats
+  // Pass 3b: Derive durationMs from tempoDurationMs, with hold overrides
   for (const rm of resolved) {
     for (const rb of rm.beats) {
-      if (rb.hold !== null) {
-        rb.durationMs = rb.hold * 1000;
-      }
+      rb.durationMs = rb.hold !== null ? rb.hold * 1000 : rb.tempoDurationMs;
     }
   }
 

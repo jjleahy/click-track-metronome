@@ -20,6 +20,12 @@ export function toInternalTempo(displayTempo: number, denominator: number, first
   return Math.floor(raw + 0.5);
 }
 
+// Reverses the duration formula to get internal quarter-note tempo from a beat's tempoDurationMs.
+// internalTempo = subdivisions * 60000 / tempoDurationMs * (4 / denominator)
+export function tempoFromBeatDuration(tempoDurationMs: number, subdivisions: number, denominator: number): number {
+  return subdivisions * (60000 / tempoDurationMs) * (4 / denominator);
+}
+
 /** Returns the Bravura glyph char and whether it needs an augmentation dot,
  *  or null for unusual beat durations (caller should show a fraction instead). */
 export function beatLabelGlyph(

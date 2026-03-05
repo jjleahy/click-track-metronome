@@ -83,6 +83,10 @@ export class MetronomeScheduler {
     }
   }
 
+  setPercentage(pct: number) {
+    this.percentage = pct;
+  }
+
   private tick() {
     while (this.nextClickTime < this.audioCtx.currentTime + this.scheduleAheadTime) {
       this.scheduleClick();

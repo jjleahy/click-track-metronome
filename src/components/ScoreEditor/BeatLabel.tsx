@@ -14,6 +14,7 @@ interface BeatLabelProps {
   id?: string;
   ariaLabel?: string;
   onChange?: (val: string) => void;
+  onFocus?: () => void;
   onBlur?: () => void;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
@@ -29,6 +30,7 @@ export function BeatLabel({
   id,
   ariaLabel,
   onChange,
+  onFocus,
   onBlur,
   onKeyDown,
 }: BeatLabelProps) {
@@ -59,6 +61,7 @@ export function BeatLabel({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
           aria-label={ariaLabel ?? 'Tempo'}
