@@ -16,6 +16,7 @@ interface FlatBeat {
 const SCROLL_TARGET_FRACTION = 0.3;
 const SCROLL_LOOKAHEAD_BEATS = 8;
 const ADD_PANEL_WIDTH = 400; // width of the "Add Measure" panel
+const ZOOM_PRESETS = [0.5, 0.625, 0.75, 0.875, 1.0];
 
 function computeScrollSpeed(
   flatBeats: FlatBeat[],
@@ -66,6 +67,8 @@ interface ScoreEditorProps {
   activeFermata: { measureIndex: number; beatIndex: number } | null;
   onFermataActivate: (measureIndex: number, beatIndex: number) => void;
   onFermataClear: () => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
 }
 
 export function ScoreEditor({
@@ -90,6 +93,8 @@ export function ScoreEditor({
   activeFermata,
   onFermataActivate,
   onFermataClear,
+  zoom,
+  onZoomChange,
 }: ScoreEditorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -317,14 +322,56 @@ export function ScoreEditor({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [activeFermata, onFermataClear]);
 
+  const zoomIndex = ZOOM_PRESETS.indexOf(zoom);
+  const canZoomOut = zoomIndex > 0 || (zoomIndex === -1 && zoom > ZOOM_PRESETS[0]);
+  const canZoomIn = zoomIndex < ZOOM_PRESETS.length - 1 || (zoomIndex === -1 && zoom < ZOOM_PRESETS[ZOOM_PRESETS.length - 1]);
+
+  function handleZoomOut() {
+    if (zoomIndex > 0) {
+      onZoomChange(ZOOM_PRESETS[zoomIndex - 1]);
+    } else if (zoomIndex === -1) {
+      const lower = ZOOM_PRESETS.filter(p => p < zoom);
+      if (lower.length > 0) onZoomChange(lower[lower.length - 1]);
+    }
+  }
+
+  function handleZoomIn() {
+    if (zoomIndex >= 0 && zoomIndex < ZOOM_PRESETS.length - 1) {
+      onZoomChange(ZOOM_PRESETS[zoomIndex + 1]);
+    } else if (zoomIndex === -1) {
+      const higher = ZOOM_PRESETS.filter(p => p > zoom);
+      if (higher.length > 0) onZoomChange(higher[0]);
+    }
+  }
+
   return (
     <section className="score-editor" aria-label="Score editor">
+      <div className="score-editor__zoom-controls">
+        <button
+          className="score-editor__zoom-btn"
+          onClick={handleZoomOut}
+          disabled={!canZoomOut}
+          aria-label="Zoom out"
+          title="Zoom out"
+        >
+          −
+        </button>
+        <button
+          className="score-editor__zoom-btn"
+          onClick={handleZoomIn}
+          disabled={!canZoomIn}
+          aria-label="Zoom in"
+          title="Zoom in"
+        >
+          +
+        </button>
+      </div>
       <div
         className="score-editor__scroll-container"
         ref={scrollRef}
         onScroll={handleScroll}
         onClick={pendingAccelStart !== null ? onAccelCancel : undefined}
-        style={{ height: TOTAL_HEIGHT + 20 }}
+        style={{ height: TOTAL_HEIGHT + 20, zoom }}
       >
         {/* Sizer div establishes the scrollable content width */}
         <div style={{ width: contentWidth, height: 1 }} />

@@ -132,6 +132,13 @@ export default function App() {
   const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
   const [pendingAccelStart, setPendingAccelStart] = useState<number | null>(null);
   const [activeFermata, setActiveFermata] = useState<{ measureIndex: number; beatIndex: number } | null>(null);
+  const [scoreZoom, setScoreZoom] = useState(() =>
+    parseFloat(localStorage.getItem('scoreZoom') ?? '1')
+  );
+
+  useEffect(() => {
+    localStorage.setItem('scoreZoom', String(scoreZoom));
+  }, [scoreZoom]);
 
   // Reset playback-range state when switching exercises
   useEffect(() => {
@@ -385,6 +392,8 @@ export default function App() {
           activeFermata={activeFermata}
           onFermataActivate={(mi, bi) => setActiveFermata({ measureIndex: mi, beatIndex: bi })}
           onFermataClear={() => setActiveFermata(null)}
+          zoom={scoreZoom}
+          onZoomChange={setScoreZoom}
         />
 
         <Metronome
