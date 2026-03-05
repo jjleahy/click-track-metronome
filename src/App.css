@@ -358,6 +358,41 @@
   color: #aaa;
 }
 
+/* Fermata hold buttons and inputs */
+.fermata-button {
+  font-family: 'Bravura', serif;
+  font-size: 1.6rem;
+  color: #999;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  user-select: none;
+  width: 50px;
+  display: inline-block;
+}
+
+.fermata-button:hover {
+  color: #ccc;
+}
+
+.fermata-label {
+  font-size: 0.75rem;
+  color: #777;
+  white-space: nowrap;
+}
+
+.fermata-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fermata-input-wrapper input {
+  width: 2.5rem;
+}
+
 /* Hide editing controls until measure is hovered or has keyboard focus */
 .measure .measure__hover-ctrl,
 .measure .accel-bar--empty {

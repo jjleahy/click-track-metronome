@@ -26,6 +26,7 @@ import {
 import { BravuraNumberInput } from './BravuraNumberInput';
 import { NoteGlyph } from './NoteGlyph';
 import type { AccelRitZone } from '../../models/ResolvedMeasure';
+import { FERMATA_BELOW } from '../../utils/noteGlyphs';
 
 interface MeasureProps {
   resolved: ResolvedMeasure;
@@ -39,6 +40,9 @@ interface MeasureProps {
   onAccelStart: (measureIndex: number) => void;
   onAccelLand: (targetIndex: number, zone: 'starting' | 'ending') => void;
   onAccelDelete: (sourceIndex: number) => void;
+  activeFermata: { measureIndex: number; beatIndex: number } | null;
+  onFermataActivate: (measureIndex: number, beatIndex: number) => void;
+  onFermataClear: () => void;
 }
 
 // Vertical position for footer-zone rows, relative to component top.
@@ -69,6 +73,9 @@ export function Measure({
   onAccelStart,
   onAccelLand,
   onAccelDelete,
+  activeFermata,
+  onFermataActivate,
+  onFermataClear,
 }: MeasureProps) {
   const measure = resolved.source;
   const denominator = resolved.meter[1];
@@ -448,20 +455,48 @@ export function Measure({
         />
       ))}
 
-      {/* Footer: Hold inputs — each aligned under its note glyph */}
-      {resolved.beats.map((rb, bi) => (
-        <input
-          key={bi}
-          type="number"
-          min={0.1}
-          max={9.9}
-          step={0.1}
-          value={measure.beats[bi].hold ?? ''}
-          onChange={(e) => handleHoldChange(bi, e.target.value)}
-          aria-label={`Beat ${bi + 1} hold`}
-          style={{ position: 'absolute', top: HOLD_ROW_TOP, left: rb.x }}
-        />
-      ))}
+      {/* Footer: Fermata hold — grayed glyph buttons (hover) or input (active/has value) */}
+      {measure.beats.some(b => b.hold == null) && (
+        <span
+          className="measure__hover-ctrl fermata-label"
+          style={{ position: 'absolute', top: HOLD_ROW_TOP + 8, left: 2 }}
+        >
+          Add...
+        </span>
+      )}
+      {resolved.beats.map((rb, bi) => {
+        const hasHold = measure.beats[bi].hold != null;
+        const isActive = activeFermata?.measureIndex === resolved.index
+                      && activeFermata?.beatIndex === bi;
+        const showInput = isActive || hasHold;
+
+        return showInput ? (
+          <span key={bi} className="fermata-input-wrapper" style={{ position: 'absolute', top: HOLD_ROW_TOP, left: rb.x }}>
+            <input
+              type="number"
+              max={9.9}
+              step={0.1}
+              value={measure.beats[bi].hold ?? ''}
+              onChange={(e) => handleHoldChange(bi, e.target.value)}
+              onBlur={() => {
+                if (measure.beats[bi].hold == null) onFermataClear();
+              }}
+              autoFocus={isActive && !hasHold}
+              aria-label={`Beat ${bi + 1} hold (seconds)`}
+            />
+          </span>
+        ) : (
+          <span
+            key={bi}
+            className="measure__hover-ctrl fermata-button"
+            onClick={() => onFermataActivate(resolved.index, bi)}
+            title="Add fermata hold"
+            style={{ position: 'absolute', top: HOLD_ROW_TOP, left: rb.x }}
+          >
+            {FERMATA_BELOW}
+          </span>
+        );
+      })}
 
       {/* End-of-measure barline */}
       <div

@@ -63,6 +63,9 @@ interface ScoreEditorProps {
   onAccelLand: (targetIndex: number, zone: 'starting' | 'ending') => void;
   onAccelCancel: () => void;
   onAccelDelete: (sourceIndex: number) => void;
+  activeFermata: { measureIndex: number; beatIndex: number } | null;
+  onFermataActivate: (measureIndex: number, beatIndex: number) => void;
+  onFermataClear: () => void;
 }
 
 export function ScoreEditor({
@@ -84,6 +87,9 @@ export function ScoreEditor({
   onAccelLand,
   onAccelCancel,
   onAccelDelete,
+  activeFermata,
+  onFermataActivate,
+  onFermataClear,
 }: ScoreEditorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -301,6 +307,16 @@ export function ScoreEditor({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [pendingAccelStart, onAccelCancel]);
 
+  // Escape cancels active fermata input
+  useEffect(() => {
+    if (activeFermata === null) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onFermataClear();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeFermata, onFermataClear]);
+
   return (
     <section className="score-editor" aria-label="Score editor">
       <div
@@ -327,6 +343,9 @@ export function ScoreEditor({
             onAccelStart={onAccelStart}
             onAccelLand={onAccelLand}
             onAccelDelete={onAccelDelete}
+            activeFermata={activeFermata}
+            onFermataActivate={onFermataActivate}
+            onFermataClear={onFermataClear}
           />
         ))}
         <AddMeasurePanel

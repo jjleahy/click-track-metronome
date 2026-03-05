@@ -131,12 +131,14 @@ export default function App() {
   const [soundConfig, setSoundConfig] = useState<SoundConfig>(DEFAULT_SOUND_CONFIG);
   const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
   const [pendingAccelStart, setPendingAccelStart] = useState<number | null>(null);
+  const [activeFermata, setActiveFermata] = useState<{ measureIndex: number; beatIndex: number } | null>(null);
 
   // Reset playback-range state when switching exercises
   useEffect(() => {
     setStartMeasureIndex(0);
     setEndMeasureIndex(null);
     setPendingAccelStart(null);
+    setActiveFermata(null);
   }, [activeExerciseId]);
 
   const resolvedMeasures = useMemo(
@@ -380,6 +382,9 @@ export default function App() {
           onAccelLand={handleAccelLand}
           onAccelCancel={handleAccelCancel}
           onAccelDelete={handleAccelDelete}
+          activeFermata={activeFermata}
+          onFermataActivate={(mi, bi) => setActiveFermata({ measureIndex: mi, beatIndex: bi })}
+          onFermataClear={() => setActiveFermata(null)}
         />
 
         <Metronome
