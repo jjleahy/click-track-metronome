@@ -168,8 +168,17 @@ export function Metronome({
 
         <span>=</span>
 
-        <div>
-          <label htmlFor="percentage-input">Speed</label>{' '}
+        <div className="speed-control">
+          <div className="speed-nudge">
+            <button
+              aria-label="Increase speed"
+              onClick={() => onPercentageChange(Math.min(200, percentage + 1))}
+            >+</button>
+            <button
+              aria-label="Decrease speed"
+              onClick={() => onPercentageChange(Math.max(10, percentage - 1))}
+            >−</button>
+          </div>
           <input
             id="percentage-input"
             type="number"

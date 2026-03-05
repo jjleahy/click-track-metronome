@@ -476,8 +476,8 @@
 
 /* Row 1: tempo fraction + speed + start */
 .tempo-equation-row {
-  gap: 1rem;
-  font-size: 1.1rem;
+  gap: 0.6rem;
+  font-size: 1.4rem;
 }
 
 .tempo-fraction {
@@ -494,6 +494,33 @@
 
 .tempo-fraction-den {
   padding-top: 2px;
+}
+
+#effective-tempo-input,
+#percentage-input {
+  font-size: 1.4rem;
+  width: 3.2rem;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.speed-nudge {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.speed-nudge button {
+  padding: 3px 6px;
+  line-height: 1;
+  font-size: 1.4rem;
+  min-width: 1.4rem;
+  border: 1px solid #bec2c6;
+  cursor: pointer;
 }
 
 .play-button {
