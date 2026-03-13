@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DEFAULT_SOUND_CONFIG } from '../../src/models/SoundConfig';
+import { DEFAULT_SOUND_CONFIG, DEFAULT_VOLUME_CONFIG } from '../../src/models/SoundConfig';
 import userEvent from '@testing-library/user-event';
 import { Metronome } from '../../src/components/Metronome/Metronome';
 import type { ResolvedMeasure } from '../../src/models/ResolvedMeasure';
@@ -34,8 +34,12 @@ const defaultProps = {
   onPercentageChange: vi.fn(),
   prepBeats: 4,
   onPrepBeatsChange: vi.fn(),
+  prepBeatsOnRepeat: false,
+  onPrepBeatsOnRepeatChange: vi.fn(),
   soundConfig: DEFAULT_SOUND_CONFIG,
   onSoundConfigChange: vi.fn(),
+  volumeConfig: DEFAULT_VOLUME_CONFIG,
+  onVolumeConfigChange: vi.fn(),
   subdivisionLevel: 'off' as const,
   onSubdivisionLevelChange: vi.fn(),
 };

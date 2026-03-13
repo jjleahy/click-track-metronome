@@ -17,6 +17,8 @@ export interface ResolvedBeat {
   startMs: number;        // cumulative from exercise start, at 100% speed
   hold: number | null;    // hold duration in seconds, or null for normal playback
   geoRatio: number | null; // per-beat geometric tempo multiplier within a gradual span; null outside any span
+  highlightSubdivisions: number; // 0 = no highlights
+  highlights: number[];          // which highlight-grid positions play the highlight sound (0-indexed)
 }
 
 export interface ResolvedMeasure {

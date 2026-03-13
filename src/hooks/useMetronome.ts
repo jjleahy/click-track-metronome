@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import { MetronomeScheduler } from '../audio/scheduler';
-import type { SoundConfig } from '../models/SoundConfig';
-import { DEFAULT_SOUND_CONFIG } from '../models/SoundConfig';
+import type { SoundConfig, VolumeConfig } from '../models/SoundConfig';
+import { DEFAULT_SOUND_CONFIG, DEFAULT_VOLUME_CONFIG } from '../models/SoundConfig';
 
 interface UseMetronomeOptions {
   resolvedMeasures: ResolvedMeasure[];
@@ -11,7 +11,9 @@ interface UseMetronomeOptions {
   loop?: boolean;                  // default false
   percentage: number;
   prepBeats?: number;              // default 0
+  prepBeatsOnRepeat?: boolean;     // default false
   soundConfig?: SoundConfig;
+  volumeConfig?: VolumeConfig;
   subdivisionLevel?: 'off' | 'eighths' | 'sixteenths';
 }
 
@@ -22,7 +24,9 @@ export function useMetronome({
   loop = false,
   percentage,
   prepBeats = 0,
+  prepBeatsOnRepeat = false,
   soundConfig = DEFAULT_SOUND_CONFIG,
+  volumeConfig = DEFAULT_VOLUME_CONFIG,
   subdivisionLevel = 'off' as const,
 }: UseMetronomeOptions) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,6 +40,8 @@ export function useMetronome({
   const stop = useCallback(() => {
     schedulerRef.current?.stop();
     schedulerRef.current = null;
+    audioCtxRef.current?.close();
+    audioCtxRef.current = null;
     setIsPlaying(false);
     setCurrentMeasure(null);
     setCurrentBeat(null);
@@ -57,7 +63,9 @@ export function useMetronome({
       loop,
       percentage: percentageRef.current,
       prepBeats,
+      prepBeatsOnRepeat,
       soundConfig,
+      volumeConfig,
       subdivisionLevel,
       audioCtx,
       onBeat: (measureIndex, beatIndex) => {
@@ -75,7 +83,7 @@ export function useMetronome({
     setIsPlaying(true);
   // percentage is excluded: changes propagate via setPercentage() without restarting
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, prepBeats, soundConfig, subdivisionLevel, stop]);
+  }, [resolvedMeasures, startMeasureIndex, endMeasureIndex, loop, prepBeats, prepBeatsOnRepeat, soundConfig, volumeConfig, subdivisionLevel, stop]);
 
   // Keep ref in sync so start() always reads the latest value;
   // also propagate to a running scheduler without restarting

@@ -24,7 +24,7 @@ export const HEADER_HEIGHT = 126;     // px
 
 // --- Footer zone (below the staff) ---
 // Time sig and subdivision inputs live here.
-export const FOOTER_HEIGHT = 80;      // px below bottom staff line
+export const FOOTER_HEIGHT = 110;     // px below bottom staff line
 
 export const TOTAL_HEIGHT = HEADER_HEIGHT + STAFF_HEIGHT + FOOTER_HEIGHT; // 286px
 

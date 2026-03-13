@@ -46,6 +46,8 @@ export function resolveExercise(measures: Measure[]): ResolvedMeasure[] {
         startMs,
         hold: beat.hold,
         geoRatio: null,
+        highlightSubdivisions: beat.highlightSubdivisions ?? 0,
+        highlights: beat.highlights ?? [],
       };
     });
 

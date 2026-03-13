@@ -1,6 +1,8 @@
 export interface Beat {
   subdivisions: number; // how many lower units this beat groups (e.g., 3 for dotted quarter in x/8)
   hold: number | null;  // hold duration in seconds, or null for normal playback
+  highlightSubdivisions?: number; // 0-8; 0 = no highlights (default 0)
+  highlights?: number[];          // which subdivisions play highlight sound (0-indexed, default [])
 }
 
 export interface GradualTempo {

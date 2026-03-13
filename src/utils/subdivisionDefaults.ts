@@ -7,7 +7,7 @@ import type { Beat } from '../models/Exercise';
 export function defaultBeats(numerator: number, denominator: number): Beat[] {
   const key = `${numerator}/${denominator}`;
   const groupings = DEFAULTS[key] ?? inferGroupings(numerator);
-  return groupings.map((subdivisions) => ({ subdivisions, hold: null }));
+  return groupings.map((subdivisions) => ({ subdivisions, hold: null, highlightSubdivisions: 0, highlights: [] }));
 }
 
 const DEFAULTS: Record<string, number[]> = {
