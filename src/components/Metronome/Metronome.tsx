@@ -31,6 +31,23 @@ interface MetronomeProps {
   onSubdivisionLevelChange: (level: 'off' | 'eighths' | 'sixteenths') => void;
 }
 
+const REFERENCE_ROW_WIDTH = 525;
+const MAX_ZOOM = 1.6;
+
+function useMetronomeZoom() {
+  const [zoom, setZoom] = useState(() =>
+    Math.min(MAX_ZOOM, Math.max(1, (window.innerWidth - 40) / REFERENCE_ROW_WIDTH))
+  );
+  useEffect(() => {
+    function update() {
+      setZoom(Math.min(MAX_ZOOM, Math.max(1, (window.innerWidth - 40) / REFERENCE_ROW_WIDTH)));
+    }
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return zoom;
+}
+
 export function Metronome({
   resolvedMeasures,
   startMeasureIndex,
@@ -143,8 +160,10 @@ export function Metronome({
     }
   }
 
+  const zoom = useMetronomeZoom();
+
   return (
-    <section className="metronome-panel" aria-label="Playback controls">
+    <section className="metronome-panel" aria-label="Playback controls" style={{ zoom }}>
       {/* Row 1: Tempo equation + Start */}
       <div className="metronome-row tempo-equation-row">
         <div className="tempo-fraction">
@@ -313,63 +332,61 @@ export function Metronome({
         </div>
       </div>
 
-      {/* Row 4: Sound selectors */}
-      <div className="metronome-row">
-        {(['downbeat', 'bigBeat', 'subdivision', 'prepBeat', 'highlight'] as const).map((role) => (
-          <div key={role}>
-            <label htmlFor={`sound-${role}`}>
-              {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : role === 'subdivision' ? 'Subdivision:' : role === 'highlight' ? 'Highlight:' : 'Prep beat:'}
-            </label>{' '}
-            <select
-              id={`sound-${role}`}
-              value={soundConfig[role]}
-              onChange={(e) =>
-                onSoundConfigChange({ ...soundConfig, [role]: e.target.value as SoundType })
-              }
-              aria-label={`${role} sound`}
-            >
-              <optgroup label="Emphasis">
-                <option value="emphasis">Emphasis</option>
-                <option value="emphasisTone">Emphasis Tone</option>
-                <option value="emphasisThin">Emphasis Thin</option>
-              </optgroup>
-              <optgroup label="Standard">
-                <option value="standard">Standard</option>
-                <option value="standardTone">Standard Tone</option>
-                <option value="standardWood">Standard Wood</option>
-              </optgroup>
-              <optgroup label="Low">
-                <option value="low">Low</option>
-                <option value="lowTone">Low Tone</option>
-                <option value="lowThud">Low Thud</option>
-              </optgroup>
-              <optgroup label="Click">
-                <option value="quietClick">Quiet Click</option>
-                <option value="warmClick">Warm Click</option>
-                <option value="tick">Tick</option>
-              </optgroup>
-              <optgroup label="Special">
-                <option value="straw">Straw</option>
-                <option value="bell">Bell</option>
-              </optgroup>
-              <option value="none">None</option>
-            </select>
-            {' '}
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volumeConfig[role]}
-              onChange={(e) =>
-                onVolumeConfigChange({ ...volumeConfig, [role]: Number(e.target.value) })
-              }
-              aria-label={`${role} volume`}
-              style={{ width: '60px' }}
-            />
-          </div>
-        ))}
-      </div>
+      {/* Rows 4–8: One row per sound selector */}
+      {(['downbeat', 'bigBeat', 'subdivision', 'prepBeat', 'highlight'] as const).map((role) => (
+        <div key={role} className="metronome-row">
+          <label htmlFor={`sound-${role}`}>
+            {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : role === 'subdivision' ? 'Subdivision:' : role === 'highlight' ? 'Highlight:' : 'Prep beat:'}
+          </label>{' '}
+          <select
+            id={`sound-${role}`}
+            value={soundConfig[role]}
+            onChange={(e) =>
+              onSoundConfigChange({ ...soundConfig, [role]: e.target.value as SoundType })
+            }
+            aria-label={`${role} sound`}
+          >
+            <optgroup label="Emphasis">
+              <option value="emphasis">Emphasis</option>
+              <option value="emphasisTone">Emphasis Tone</option>
+              <option value="emphasisThin">Emphasis Thin</option>
+            </optgroup>
+            <optgroup label="Standard">
+              <option value="standard">Standard</option>
+              <option value="standardTone">Standard Tone</option>
+              <option value="standardWood">Standard Wood</option>
+            </optgroup>
+            <optgroup label="Low">
+              <option value="low">Low</option>
+              <option value="lowTone">Low Tone</option>
+              <option value="lowThud">Low Thud</option>
+            </optgroup>
+            <optgroup label="Click">
+              <option value="quietClick">Quiet Click</option>
+              <option value="warmClick">Warm Click</option>
+              <option value="tick">Tick</option>
+            </optgroup>
+            <optgroup label="Special">
+              <option value="straw">Straw</option>
+              <option value="bell">Bell</option>
+            </optgroup>
+            <option value="none">None</option>
+          </select>
+          {' '}
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volumeConfig[role]}
+            onChange={(e) =>
+              onVolumeConfigChange({ ...volumeConfig, [role]: Number(e.target.value) })
+            }
+            aria-label={`${role} volume`}
+            style={{ width: '60px' }}
+          />
+        </div>
+      ))}
     </section>
   );
 }
