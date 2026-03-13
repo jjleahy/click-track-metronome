@@ -98,42 +98,84 @@ export class MetronomeScheduler {
   private scheduleClick() {
     const { currentMeasureIndex, currentBeatIndex } = this;
     const isDownbeat = currentBeatIndex === 0;
-    const soundType = isDownbeat ? this.soundConfig.downbeat : this.soundConfig.bigBeat;
-    this.playSound(this.nextClickTime, soundType);
+    const rm = this.resolvedMeasures[currentMeasureIndex];
+    const rb = rm?.beats[currentBeatIndex];
+
+    // Beat attack: highlight overrides downbeat/bigBeat if position 0 is highlighted
+    const attackHighlighted = rb !== undefined && rb.highlightSubdivisions > 0 && rb.highlights.includes(0);
+    const attackSound = attackHighlighted
+      ? this.soundConfig.highlight
+      : (isDownbeat ? this.soundConfig.downbeat : this.soundConfig.bigBeat);
+    this.playSound(this.nextClickTime, attackSound);
     this.onBeat(currentMeasureIndex, currentBeatIndex);
 
-    // Schedule sub-beat clicks if subdivision level is active and beat is not held
-    if (this.subdivisionLevel !== 'off') {
-      const rm = this.resolvedMeasures[currentMeasureIndex];
-      if (rm) {
-        const rb = rm.beats[currentBeatIndex];
-        if (rb.hold === null) {
-          const denominator = rm.source.meter[1];
-          const subCount = computeSubBeatCount(rb.subdivisions, denominator, this.subdivisionLevel);
-          if (subCount !== null && subCount >= 2) {
-            const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
-            if (rb.geoRatio !== null) {
-              // Geometric sub-beat distribution: sub-beat i gets a weight proportional
-              // to 1 / subBeatRatio^i, so the duration smoothly follows the tempo curve.
-              const subBeatRatio = Math.pow(rb.geoRatio, 1 / subCount);
-              const weights: number[] = [];
-              let totalWeight = 0;
-              for (let i = 0; i < subCount; i++) {
-                const w = 1 / Math.pow(subBeatRatio, i);
-                weights.push(w);
-                totalWeight += w;
-              }
-              let offsetSec = 0;
-              for (let i = 1; i < subCount; i++) {
-                offsetSec += beatDuration * weights[i - 1] / totalWeight;
-                this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
-              }
-            } else {
-              // Even distribution fallback
-              const subInterval = beatDuration / subCount;
-              for (let i = 1; i < subCount; i++) {
-                this.playSound(this.nextClickTime + i * subInterval, this.soundConfig.subdivision);
-              }
+    if (!rm || !rb) return;
+
+    const isHeld = rb.hold !== null;
+    const beatDuration = (rb.durationMs / 1000) / (this.percentage / 100);
+
+    // Loop 1: highlight sub-beats (positions 1+ that are in highlights[])
+    // Skipped entirely for held beats.
+    const highlightOffsets: number[] = [];
+    if (!isHeld && rb.highlightSubdivisions > 0 && rb.highlights.length > 0) {
+      const hs = rb.highlightSubdivisions;
+      if (rb.geoRatio !== null) {
+        const subBeatRatio = Math.pow(rb.geoRatio, 1 / hs);
+        const weights: number[] = [];
+        let totalWeight = 0;
+        for (let i = 0; i < hs; i++) {
+          const w = 1 / Math.pow(subBeatRatio, i);
+          weights.push(w);
+          totalWeight += w;
+        }
+        let offsetSec = 0;
+        for (let i = 1; i < hs; i++) {
+          offsetSec += beatDuration * weights[i - 1] / totalWeight;
+          if (rb.highlights.includes(i)) {
+            highlightOffsets.push(offsetSec);
+            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight);
+          }
+        }
+      } else {
+        for (let i = 1; i < hs; i++) {
+          if (rb.highlights.includes(i)) {
+            const offsetSec = (i / hs) * beatDuration;
+            highlightOffsets.push(offsetSec);
+            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight);
+          }
+        }
+      }
+    }
+
+    // Loop 2: standard subdivision clicks — skip any that coincide with a highlight offset
+    if (this.subdivisionLevel !== 'off' && !isHeld) {
+      const denominator = rm.source.meter[1];
+      const subCount = computeSubBeatCount(rb.subdivisions, denominator, this.subdivisionLevel);
+      if (subCount !== null && subCount >= 2) {
+        if (rb.geoRatio !== null) {
+          // Geometric sub-beat distribution
+          const subBeatRatio = Math.pow(rb.geoRatio, 1 / subCount);
+          const weights: number[] = [];
+          let totalWeight = 0;
+          for (let i = 0; i < subCount; i++) {
+            const w = 1 / Math.pow(subBeatRatio, i);
+            weights.push(w);
+            totalWeight += w;
+          }
+          let offsetSec = 0;
+          for (let i = 1; i < subCount; i++) {
+            offsetSec += beatDuration * weights[i - 1] / totalWeight;
+            if (!highlightOffsets.some(h => Math.abs(h - offsetSec) < 1e-9)) {
+              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
+            }
+          }
+        } else {
+          // Even distribution
+          const subInterval = beatDuration / subCount;
+          for (let i = 1; i < subCount; i++) {
+            const offsetSec = i * subInterval;
+            if (!highlightOffsets.some(h => Math.abs(h - offsetSec) < 1e-9)) {
+              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
             }
           }
         }
