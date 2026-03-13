@@ -16,10 +16,10 @@ interface AddMeasurePanelProps {
 }
 
 const DEFAULT_TYPES: MeasureType[] = [
-  { key: '4/4 (1,1,1,1)', meterLabel: '4/4', meter: [4, 4], beats: [{ subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }] },
-  { key: '3/4 (1,1,1)', meterLabel: '3/4', meter: [3, 4], beats: [{ subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }] },
-  { key: '6/8 (3,3)', meterLabel: '6/8', meter: [6, 8], beats: [{ subdivisions: 3, hold: null }, { subdivisions: 3, hold: null }] },
-  { key: '2/2 (1,1)', meterLabel: '2/2', meter: [2, 2], beats: [{ subdivisions: 1, hold: null }, { subdivisions: 1, hold: null }] },
+  { key: '4/4 (1,1,1,1)', meterLabel: '4/4', meter: [4, 4], beats: [{ subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }] },
+  { key: '3/4 (1,1,1)', meterLabel: '3/4', meter: [3, 4], beats: [{ subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }] },
+  { key: '6/8 (3,3)', meterLabel: '6/8', meter: [6, 8], beats: [{ subdivisions: 3, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 3, hold: null, highlightSubdivisions: 0, highlights: [] }] },
+  { key: '2/2 (1,1)', meterLabel: '2/2', meter: [2, 2], beats: [{ subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }, { subdivisions: 1, hold: null, highlightSubdivisions: 0, highlights: [] }] },
 ];
 
 function getMeasureTypeKey(m: Measure): string {

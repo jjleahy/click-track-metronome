@@ -46,7 +46,8 @@ interface MeasureProps {
 }
 
 // Vertical position for footer-zone rows, relative to component top.
-const SUBDIV_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + STAFF_SPACE;  // just below bottom staff line
+const HIGHLIGHT_ROW_TOP = HEADER_HEIGHT + STAFF_HEIGHT + 6;         // just below staff
+const SUBDIV_ROW_TOP = HIGHLIGHT_ROW_TOP + 30;
 const HOLD_ROW_TOP = SUBDIV_ROW_TOP + 30;
 
 const ACCEL_COLOR: Record<AccelRitZone['color'], string> = {
@@ -166,12 +167,44 @@ export function Measure({
     let newBeats = applySubdivisionChange(measure.beats, beatIndex, newValue, measure.meter[0]);
     // Auto-insert a placeholder beat when underfilled and no beat is already empty
     if (shouldAutoInsertBeat(newBeats, measure.meter[0])) {
-      newBeats.push({ subdivisions: 0, hold: null });
+      newBeats.push({ subdivisions: 0, hold: null, highlightSubdivisions: 0, highlights: [] });
     }
     // Strip lingering 0-beats when the measure is valid without them
     if (isMeasureValid(newBeats.filter(b => b.subdivisions > 0), measure.meter[0])) {
       newBeats = newBeats.filter(b => b.subdivisions > 0);
     }
+    onChange({ ...measure, beats: newBeats });
+  }
+
+  function handleHighlightCycle(beatIndex: number) {
+    const beat = measure.beats[beatIndex];
+    const current = beat.highlightSubdivisions;
+    let next: number;
+    let nextHighlights: number[];
+    if (current === 0) {
+      next = 1;
+      nextHighlights = [0];
+    } else if (current < 8) {
+      next = current + 1;
+      nextHighlights = [];
+    } else {
+      next = 0;
+      nextHighlights = [];
+    }
+    const newBeats = measure.beats.map((b, i) =>
+      i === beatIndex ? { ...b, highlightSubdivisions: next, highlights: nextHighlights } : b
+    );
+    onChange({ ...measure, beats: newBeats });
+  }
+
+  function handleHighlightToggle(beatIndex: number, subIndex: number, checked: boolean) {
+    const beat = measure.beats[beatIndex];
+    const newHighlights = checked
+      ? [...beat.highlights, subIndex].sort((a, b) => a - b)
+      : beat.highlights.filter(h => h !== subIndex);
+    const newBeats = measure.beats.map((b, i) =>
+      i === beatIndex ? { ...b, highlights: newHighlights } : b
+    );
     onChange({ ...measure, beats: newBeats });
   }
 
@@ -242,6 +275,8 @@ export function Measure({
           x={rb.x}
           subdivisions={rb.subdivisions}
           isActive={activeBeat === i}
+          onClick={() => handleHighlightCycle(i)}
+          highlightSubdivisions={measure.beats[i].highlightSubdivisions}
         />
       ))}
 
@@ -439,6 +474,30 @@ export function Measure({
           </button>
         </div>
       </div>
+
+      {/* Footer: Highlight checkboxes — each aligned under its note glyph */}
+      {resolved.beats.map((rb, bi) => {
+        const beat = measure.beats[bi];
+        if (beat.highlightSubdivisions === 0) return null;
+        return (
+          <div
+            key={bi}
+            className="highlight-checkboxes"
+            style={{ position: 'absolute', top: HIGHLIGHT_ROW_TOP, left: rb.x }}
+          >
+            {Array.from({ length: beat.highlightSubdivisions }, (_, si) => (
+              <input
+                key={si}
+                type="checkbox"
+                checked={beat.highlights.includes(si)}
+                onChange={(e) => handleHighlightToggle(bi, si, e.target.checked)}
+                disabled={si > 0 && beat.hold != null}
+                aria-label={`Beat ${bi + 1} subdivision ${si + 1} highlight`}
+              />
+            ))}
+          </div>
+        );
+      })}
 
       {/* Footer: Subdivision inputs — each aligned under its note glyph */}
       {resolved.beats.map((rb, bi) => (

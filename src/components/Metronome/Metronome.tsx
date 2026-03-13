@@ -295,10 +295,10 @@ export function Metronome({
 
       {/* Row 4: Sound selectors */}
       <div className="metronome-row">
-        {(['downbeat', 'bigBeat', 'subdivision', 'prepBeat'] as const).map((role) => (
+        {(['downbeat', 'bigBeat', 'subdivision', 'prepBeat', 'highlight'] as const).map((role) => (
           <div key={role}>
             <label htmlFor={`sound-${role}`}>
-              {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : role === 'subdivision' ? 'Subdivision:' : 'Prep beat:'}
+              {role === 'downbeat' ? 'Downbeat:' : role === 'bigBeat' ? 'Big beat:' : role === 'subdivision' ? 'Subdivision:' : role === 'highlight' ? 'Highlight:' : 'Prep beat:'}
             </label>{' '}
             <select
               id={`sound-${role}`}

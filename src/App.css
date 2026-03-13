@@ -448,6 +448,39 @@
   pointer-events: auto;
 }
 
+/* Highlight checkboxes row */
+.highlight-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  width: 60px;
+  gap: 2px;
+}
+
+.highlight-checkboxes input[type="checkbox"] {
+  accent-color: #646cff;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Highlight badge on note glyph */
+.note-glyph__highlight-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #646cff;
+  color: #fff;
+  font-size: 11px;
+  font-family: sans-serif;
+  font-weight: bold;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* Metronome panel */
 .metronome-panel {
   display: flex;
