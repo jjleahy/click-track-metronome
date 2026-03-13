@@ -36,6 +36,8 @@ export function useMetronome({
   const stop = useCallback(() => {
     schedulerRef.current?.stop();
     schedulerRef.current = null;
+    audioCtxRef.current?.close();
+    audioCtxRef.current = null;
     setIsPlaying(false);
     setCurrentMeasure(null);
     setCurrentBeat(null);
