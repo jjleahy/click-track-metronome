@@ -178,7 +178,7 @@ export function Measure({
 
   function handleHighlightCycle(beatIndex: number) {
     const beat = measure.beats[beatIndex];
-    const current = beat.highlightSubdivisions;
+    const current = beat.highlightSubdivisions ?? 0;
     let next: number;
     let nextHighlights: number[];
     if (current === 0) {
@@ -200,8 +200,8 @@ export function Measure({
   function handleHighlightToggle(beatIndex: number, subIndex: number, checked: boolean) {
     const beat = measure.beats[beatIndex];
     const newHighlights = checked
-      ? [...beat.highlights, subIndex].sort((a, b) => a - b)
-      : beat.highlights.filter(h => h !== subIndex);
+      ? [...(beat.highlights ?? []), subIndex].sort((a, b) => a - b)
+      : (beat.highlights ?? []).filter(h => h !== subIndex);
     const newBeats = measure.beats.map((b, i) =>
       i === beatIndex ? { ...b, highlights: newHighlights } : b
     );
@@ -485,11 +485,11 @@ export function Measure({
             className="highlight-checkboxes"
             style={{ position: 'absolute', top: HIGHLIGHT_ROW_TOP, left: rb.x }}
           >
-            {Array.from({ length: beat.highlightSubdivisions }, (_, si) => (
+            {Array.from({ length: beat.highlightSubdivisions ?? 0 }, (_, si) => (
               <input
                 key={si}
                 type="checkbox"
-                checked={beat.highlights.includes(si)}
+                checked={(beat.highlights ?? []).includes(si)}
                 onChange={(e) => handleHighlightToggle(bi, si, e.target.checked)}
                 disabled={si > 0 && beat.hold != null}
                 aria-label={`Beat ${bi + 1} subdivision ${si + 1} highlight`}
