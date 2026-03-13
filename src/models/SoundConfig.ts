@@ -21,3 +21,13 @@ export const DEFAULT_SOUND_CONFIG: SoundConfig = {
   prepBeat: 'standardWood',
   highlight: 'bell',
 };
+
+export type VolumeConfig = Record<keyof SoundConfig, number>;
+
+export const DEFAULT_VOLUME_CONFIG: VolumeConfig = {
+  downbeat: 1,
+  bigBeat: 1,
+  subdivision: 1,
+  prepBeat: 1,
+  highlight: 1,
+};

@@ -210,7 +210,7 @@ export function Measure({
 
   function handleHoldChange(beatIndex: number, rawValue: string) {
     const parsed = parseFloat(rawValue);
-    const newHold = isNaN(parsed) ? null : Math.min(9.9, Math.max(0.1, parsed));
+    const newHold = isNaN(parsed) ? null : Math.min(9.9, Math.max(0, parsed));
     const newBeats = measure.beats.map((b, i) =>
       i === beatIndex ? { ...b, hold: newHold } : b
     );
@@ -538,7 +538,7 @@ export function Measure({
               value={measure.beats[bi].hold ?? ''}
               onChange={(e) => handleHoldChange(bi, e.target.value)}
               onBlur={() => {
-                if (measure.beats[bi].hold == null) onFermataClear();
+                if (!measure.beats[bi].hold) onFermataClear();
               }}
               autoFocus={isActive && !hasHold}
               aria-label={`Beat ${bi + 1} hold (seconds)`}

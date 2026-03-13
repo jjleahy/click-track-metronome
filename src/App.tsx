@@ -9,8 +9,8 @@ import { Metronome } from './components/Metronome/Metronome';
 import { ExerciseTabs } from './components/ExerciseTabs';
 import { ImportDialog } from './components/ImportDialog';
 import type { ImportAction } from './components/ImportDialog';
-import { DEFAULT_SOUND_CONFIG } from './models/SoundConfig';
-import type { SoundConfig } from './models/SoundConfig';
+import { DEFAULT_SOUND_CONFIG, DEFAULT_VOLUME_CONFIG } from './models/SoundConfig';
+import type { SoundConfig, VolumeConfig } from './models/SoundConfig';
 import {
   loadAllExercises, saveExercise, saveExerciseList, saveActiveId,
   loadActiveId, deleteExercise as deleteExerciseFromStorage,
@@ -128,7 +128,9 @@ export default function App() {
   const [loop, setLoop] = useState(false);
   const [percentage, setPercentage] = useState(100);
   const [prepBeats, setPrepBeats] = useState(4);
+  const [prepBeatsOnRepeat, setPrepBeatsOnRepeat] = useState(false);
   const [soundConfig, setSoundConfig] = useState<SoundConfig>(DEFAULT_SOUND_CONFIG);
+  const [volumeConfig, setVolumeConfig] = useState<VolumeConfig>(DEFAULT_VOLUME_CONFIG);
   const [subdivisionLevel, setSubdivisionLevel] = useState<'off' | 'eighths' | 'sixteenths'>('off');
   const [pendingAccelStart, setPendingAccelStart] = useState<number | null>(null);
   const [activeFermata, setActiveFermata] = useState<{ measureIndex: number; beatIndex: number } | null>(null);
@@ -350,7 +352,9 @@ export default function App() {
     percentage,
     loop,
     prepBeats,
+    prepBeatsOnRepeat,
     soundConfig,
+    volumeConfig,
     subdivisionLevel,
   });
 
@@ -413,8 +417,12 @@ export default function App() {
           onPercentageChange={setPercentage}
           prepBeats={prepBeats}
           onPrepBeatsChange={setPrepBeats}
+          prepBeatsOnRepeat={prepBeatsOnRepeat}
+          onPrepBeatsOnRepeatChange={setPrepBeatsOnRepeat}
           soundConfig={soundConfig}
           onSoundConfigChange={setSoundConfig}
+          volumeConfig={volumeConfig}
+          onVolumeConfigChange={setVolumeConfig}
           subdivisionLevel={subdivisionLevel}
           onSubdivisionLevelChange={setSubdivisionLevel}
         />

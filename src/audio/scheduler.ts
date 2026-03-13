@@ -1,6 +1,6 @@
 import type { ResolvedMeasure } from '../models/ResolvedMeasure';
-import type { SoundConfig, SoundType } from '../models/SoundConfig';
-import { DEFAULT_SOUND_CONFIG } from '../models/SoundConfig';
+import type { SoundConfig, SoundType, VolumeConfig } from '../models/SoundConfig';
+import { DEFAULT_SOUND_CONFIG, DEFAULT_VOLUME_CONFIG } from '../models/SoundConfig';
 import { computeSubBeatCount } from '../utils/subdivisionPlayback';
 import { SOUND_PARAMS } from './soundParams';
 
@@ -11,7 +11,9 @@ interface SchedulerOptions {
   loop: boolean;
   percentage: number; // practice speed multiplier, e.g. 100 = full speed
   prepBeats: number;  // count-in beats before playback; 0 = no count-in
+  prepBeatsOnRepeat?: boolean; // whether to play prep beats on each loop repeat
   soundConfig?: SoundConfig;
+  volumeConfig?: VolumeConfig;
   subdivisionLevel?: 'off' | 'eighths' | 'sixteenths';
   audioCtx: AudioContext;
   onBeat: (measureIndex: number, beatIndex: number) => void;
@@ -27,7 +29,9 @@ export class MetronomeScheduler {
   private loop: boolean;
   private percentage: number;
   private prepBeats: number;
+  private prepBeatsOnRepeat: boolean;
   private soundConfig: SoundConfig;
+  private volumeConfig: VolumeConfig;
   private subdivisionLevel: 'off' | 'eighths' | 'sixteenths';
   private onBeat: (measureIndex: number, beatIndex: number) => void;
   private onEnd: () => void;
@@ -48,7 +52,9 @@ export class MetronomeScheduler {
     this.loop = opts.loop;
     this.percentage = opts.percentage;
     this.prepBeats = opts.prepBeats;
+    this.prepBeatsOnRepeat = opts.prepBeatsOnRepeat ?? false;
     this.soundConfig = opts.soundConfig ?? DEFAULT_SOUND_CONFIG;
+    this.volumeConfig = opts.volumeConfig ?? DEFAULT_VOLUME_CONFIG;
     this.subdivisionLevel = opts.subdivisionLevel ?? 'off';
     this.onBeat = opts.onBeat;
     this.onEnd = opts.onEnd;
@@ -59,20 +65,7 @@ export class MetronomeScheduler {
     this.currentBeatIndex = 0;
     this.nextClickTime = this.audioCtx.currentTime + 0.05;
 
-    // Schedule prep beat count-in (audio-only, no onBeat callback)
-    if (this.prepBeats > 0) {
-      const startMeasure = this.resolvedMeasures[this.startMeasureIndex];
-      if (startMeasure && startMeasure.beats.length > 0) {
-        const firstBeatDurationMs = startMeasure.beats[0].durationMs;
-        const prepBeatDuration = (firstBeatDurationMs / 1000) / (this.percentage / 100);
-        for (let i = 0; i < this.prepBeats; i++) {
-          const t = this.nextClickTime + i * prepBeatDuration;
-          this.playSound(t, this.soundConfig.prepBeat);
-        }
-        this.nextClickTime += this.prepBeats * prepBeatDuration;
-      }
-    }
-
+    this.schedulePrepBeats();
     this.tick();
   }
 
@@ -95,6 +88,18 @@ export class MetronomeScheduler {
     this.timerID = setTimeout(() => this.tick(), this.lookahead);
   }
 
+  private schedulePrepBeats() {
+    if (this.prepBeats <= 0) return;
+    const startMeasure = this.resolvedMeasures[this.startMeasureIndex];
+    if (!startMeasure || startMeasure.beats.length === 0) return;
+    const firstBeatDurationMs = startMeasure.beats[0].durationMs;
+    const prepBeatDuration = (firstBeatDurationMs / 1000) / (this.percentage / 100);
+    for (let i = 0; i < this.prepBeats; i++) {
+      this.playSound(this.nextClickTime + i * prepBeatDuration, this.soundConfig.prepBeat, this.volumeConfig.prepBeat);
+    }
+    this.nextClickTime += this.prepBeats * prepBeatDuration;
+  }
+
   private scheduleClick() {
     const { currentMeasureIndex, currentBeatIndex } = this;
     const isDownbeat = currentBeatIndex === 0;
@@ -106,7 +111,10 @@ export class MetronomeScheduler {
     const attackSound = attackHighlighted
       ? this.soundConfig.highlight
       : (isDownbeat ? this.soundConfig.downbeat : this.soundConfig.bigBeat);
-    this.playSound(this.nextClickTime, attackSound);
+    const attackVolume = attackHighlighted
+      ? this.volumeConfig.highlight
+      : (isDownbeat ? this.volumeConfig.downbeat : this.volumeConfig.bigBeat);
+    this.playSound(this.nextClickTime, attackSound, attackVolume);
     this.onBeat(currentMeasureIndex, currentBeatIndex);
 
     if (!rm || !rb) return;
@@ -133,7 +141,7 @@ export class MetronomeScheduler {
           offsetSec += beatDuration * weights[i - 1] / totalWeight;
           if (rb.highlights.includes(i)) {
             highlightOffsets.push(offsetSec);
-            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight);
+            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight, this.volumeConfig.highlight);
           }
         }
       } else {
@@ -141,7 +149,7 @@ export class MetronomeScheduler {
           if (rb.highlights.includes(i)) {
             const offsetSec = (i / hs) * beatDuration;
             highlightOffsets.push(offsetSec);
-            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight);
+            this.playSound(this.nextClickTime + offsetSec, this.soundConfig.highlight, this.volumeConfig.highlight);
           }
         }
       }
@@ -166,7 +174,7 @@ export class MetronomeScheduler {
           for (let i = 1; i < subCount; i++) {
             offsetSec += beatDuration * weights[i - 1] / totalWeight;
             if (!highlightOffsets.some(h => Math.abs(h - offsetSec) < 1e-9)) {
-              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
+              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision, this.volumeConfig.subdivision);
             }
           }
         } else {
@@ -175,7 +183,7 @@ export class MetronomeScheduler {
           for (let i = 1; i < subCount; i++) {
             const offsetSec = i * subInterval;
             if (!highlightOffsets.some(h => Math.abs(h - offsetSec) < 1e-9)) {
-              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision);
+              this.playSound(this.nextClickTime + offsetSec, this.soundConfig.subdivision, this.volumeConfig.subdivision);
             }
           }
         }
@@ -201,6 +209,7 @@ export class MetronomeScheduler {
         // Reached end of playback range
         if (this.loop) {
           this.currentMeasureIndex = this.startMeasureIndex;
+          if (this.prepBeatsOnRepeat) this.schedulePrepBeats();
         } else {
           this.stop();
           this.onEnd();
@@ -214,9 +223,9 @@ export class MetronomeScheduler {
     return true;
   }
 
-  private playSound(time: number, type: SoundType) {
+  private playSound(time: number, type: SoundType, volume: number) {
     const partials = SOUND_PARAMS[type];
-    if (!partials) return; // 'none' — silent
+    if (!partials || volume === 0) return; // 'none' or muted — silent
 
     for (const p of partials) {
       const osc = this.audioCtx.createOscillator();
@@ -225,7 +234,7 @@ export class MetronomeScheduler {
       gain.connect(this.audioCtx.destination);
 
       osc.frequency.value = p.freq;
-      gain.gain.setValueAtTime(p.gain, time);
+      gain.gain.setValueAtTime(p.gain * volume, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + p.dur);
 
       osc.start(time);

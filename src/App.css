@@ -409,6 +409,8 @@
   line-height: 1;
   user-select: none;
   width: 50px;
+  height: 28px;
+  overflow: hidden;
   display: inline-block;
 }
 

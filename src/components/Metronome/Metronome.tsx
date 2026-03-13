@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { ResolvedMeasure } from '../../models/ResolvedMeasure';
 import { toDisplayTempo, tempoFromBeatDuration } from '../../utils/tempoConversion';
 import { BeatLabel } from '../ScoreEditor/BeatLabel';
-import type { SoundConfig, SoundType } from '../../models/SoundConfig';
+import type { SoundConfig, SoundType, VolumeConfig } from '../../models/SoundConfig';
 
 interface MetronomeProps {
   resolvedMeasures: ResolvedMeasure[];
@@ -21,8 +21,12 @@ interface MetronomeProps {
   onPercentageChange: (pct: number) => void;
   prepBeats: number;
   onPrepBeatsChange: (n: number) => void;
+  prepBeatsOnRepeat: boolean;
+  onPrepBeatsOnRepeatChange: (v: boolean) => void;
   soundConfig: SoundConfig;
   onSoundConfigChange: (cfg: SoundConfig) => void;
+  volumeConfig: VolumeConfig;
+  onVolumeConfigChange: (cfg: VolumeConfig) => void;
   subdivisionLevel: 'off' | 'eighths' | 'sixteenths';
   onSubdivisionLevelChange: (level: 'off' | 'eighths' | 'sixteenths') => void;
 }
@@ -44,8 +48,12 @@ export function Metronome({
   onPercentageChange,
   prepBeats,
   onPrepBeatsChange,
+  prepBeatsOnRepeat,
+  onPrepBeatsOnRepeatChange,
   soundConfig,
   onSoundConfigChange,
+  volumeConfig,
+  onVolumeConfigChange,
   subdivisionLevel,
   onSubdivisionLevelChange,
 }: MetronomeProps) {
@@ -277,6 +285,18 @@ export function Metronome({
         </div>
 
         <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={prepBeatsOnRepeat}
+              onChange={(e) => onPrepBeatsOnRepeatChange(e.target.checked)}
+              disabled={isPlaying}
+            />
+            {' '}on repeat
+          </label>
+        </div>
+
+        <div>
           <label htmlFor="subdivision-level">Subdivisions:</label>{' '}
           <select
             id="subdivision-level"
@@ -334,6 +354,19 @@ export function Metronome({
               </optgroup>
               <option value="none">None</option>
             </select>
+            {' '}
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volumeConfig[role]}
+              onChange={(e) =>
+                onVolumeConfigChange({ ...volumeConfig, [role]: Number(e.target.value) })
+              }
+              aria-label={`${role} volume`}
+              style={{ width: '60px' }}
+            />
           </div>
         ))}
       </div>
