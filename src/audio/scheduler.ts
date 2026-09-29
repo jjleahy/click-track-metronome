@@ -2,7 +2,8 @@ import type { ResolvedMeasure } from '../models/ResolvedMeasure';
 import type { SoundConfig, SoundType, VolumeConfig } from '../models/SoundConfig';
 import { DEFAULT_SOUND_CONFIG, DEFAULT_VOLUME_CONFIG } from '../models/SoundConfig';
 import { computeSubBeatCount } from '../utils/subdivisionPlayback';
-import { SOUND_PARAMS } from './soundParams';
+import { HOLD_SEC, SOUND_PARAMS } from './soundParams';
+import { createMasterOutput } from './masterOutput';
 
 interface SchedulerOptions {
   resolvedMeasures: ResolvedMeasure[];
@@ -23,6 +24,7 @@ interface SchedulerOptions {
 
 export class MetronomeScheduler {
   private audioCtx: AudioContext;
+  private masterOutput: AudioNode | null = null; // created lazily on first sound
   private resolvedMeasures: ResolvedMeasure[];
   private startMeasureIndex: number;
   private endMeasureIndex: number; // resolved: last measure index that plays
@@ -227,18 +229,22 @@ export class MetronomeScheduler {
     const partials = SOUND_PARAMS[type];
     if (!partials || volume === 0) return; // 'none' or muted — silent
 
+    this.masterOutput ??= createMasterOutput(this.audioCtx);
+
     for (const p of partials) {
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
       osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
+      gain.connect(this.masterOutput);
 
       osc.frequency.value = p.freq;
-      gain.gain.setValueAtTime(p.gain * volume, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + p.dur);
+      const level = p.gain * volume;
+      gain.gain.setValueAtTime(level, time);
+      gain.gain.setValueAtTime(level, time + HOLD_SEC);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + HOLD_SEC + p.dur);
 
       osc.start(time);
-      osc.stop(time + p.dur);
+      osc.stop(time + HOLD_SEC + p.dur);
     }
   }
 }

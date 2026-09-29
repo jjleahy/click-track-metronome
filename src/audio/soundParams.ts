@@ -1,6 +1,11 @@
 import type { SoundType } from '../models/SoundConfig';
 
+// Every partial stays at full gain for this long before its exponential decay begins.
+// Adds perceived loudness (energy) without raising the peak.
+export const HOLD_SEC = 0.0025;
+
 // Sound parameters per type — each entry is an array of sine wave partials
+// (`dur` is the length of the decay, not counting the hold)
 export const SOUND_PARAMS: Record<SoundType, { freq: number; gain: number; dur: number }[] | null> = {
 
   // ── Emphasis variants ──────────────────────────────────
