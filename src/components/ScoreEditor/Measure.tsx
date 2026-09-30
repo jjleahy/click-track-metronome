@@ -96,6 +96,35 @@ export function Measure({
     );
   }, [measure.tempo, denominator, firstSubdivision]);
 
+  // Single-measure accel/rit arrival tempo: stored as quarter-note BPM like every
+  // other tempo, displayed in terms of this measure's first big beat.
+  const storedEndTempo = measure.gradualTempo?.endTempo ?? null;
+  const displayEndTempo = storedEndTempo !== null
+    ? String(toDisplayTempo(storedEndTempo, denominator, firstSubdivision))
+    : '';
+  const [endTempoInputStr, setEndTempoInputStr] = useState(displayEndTempo);
+
+  useEffect(() => {
+    setEndTempoInputStr(displayEndTempo);
+  }, [displayEndTempo]);
+
+  function commitEndTempo() {
+    if (!measure.gradualTempo) return;
+    if (endTempoInputStr === '') {
+      onChange({ ...measure, gradualTempo: { ...measure.gradualTempo, endTempo: null } });
+      return;
+    }
+    const parsedDisplay = parseInt(endTempoInputStr, 10);
+    if (!isNaN(parsedDisplay) && parsedDisplay >= 1) {
+      const internal = toInternalTempo(parsedDisplay, denominator, firstSubdivision);
+      if (internal >= 20 && internal <= 300) {
+        onChange({ ...measure, gradualTempo: { ...measure.gradualTempo, endTempo: internal } });
+        return;
+      }
+    }
+    setEndTempoInputStr(displayEndTempo); // invalid — revert
+  }
+
   const [labelInputStr, setLabelInputStr] = useState(
     measure.rehearsalNumber !== null ? String(measure.rehearsalNumber) : ''
   );
@@ -355,20 +384,13 @@ export function Measure({
               {zone.type === 'single' && (
                 <input
                   type="number"
-                  min={20}
-                  max={300}
-                  placeholder={String(resolved.tempo)}
-                  value={resolved.source.gradualTempo?.endTempo ?? ''}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    onChange({
-                      ...resolved.source,
-                      gradualTempo: {
-                        ...resolved.source.gradualTempo!,
-                        endTempo: isNaN(val) ? null : val,
-                      },
-                    });
-                  }}
+                  min={1}
+                  max={999}
+                  placeholder={String(toDisplayTempo(resolved.tempo, denominator, firstSubdivision))}
+                  value={endTempoInputStr}
+                  onChange={(e) => setEndTempoInputStr(e.target.value)}
+                  onBlur={commitEndTempo}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitEndTempo(); }}
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Arrival tempo"
                   style={{ position: 'absolute', right: 4, top: 4, width: '3.5rem', fontSize: 18 }}
