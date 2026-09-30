@@ -1,0 +1,10 @@
+{
+  "name": "Example: meter changes",
+  "comment": "Additive 7/8, then 4/4, then 5/8, then compound 6/8. 'repeat' expands to identical measures; tempo and label apply to the first copy only.",
+  "measures": [
+    { "meter": "7/8", "beats": [2, 2, 3], "tempo": "eighth=176", "label": 1, "repeat": 2 },
+    { "meter": "4/4", "tempo": "quarter=88", "repeat": 2 },
+    { "meter": "5/8", "beats": [3, 2], "label": "A", "repeat": 2 },
+    { "meter": "6/8", "tempo": "dotted-quarter=60", "repeat": 2 }
+  ]
+}

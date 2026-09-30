@@ -26,6 +26,7 @@ A web app for musicians to map complex rhythmic structures — time signature ch
 - `src/components/ScoreEditor/` — staff display and all editing UI
 - `src/components/Metronome/` — playback controls
 - `src/models/` — TypeScript interfaces for the data model (Exercise, Measure, Beat, GradualTempo)
+- `skills/click-track-exercises/` — Claude skill (SKILL.md + scripts + references) for authoring exercises and share links outside the app. `references/exercise-spec.md` is the written spec of the Exercise format. `scripts/exercise.mjs` re-implements a few app rules (default groupings, tempo conversion, accel/rit constraints); `tests/skill/` checks it against the app, so update both together when those rules change
 
 ## Subdivision Defaults
 
