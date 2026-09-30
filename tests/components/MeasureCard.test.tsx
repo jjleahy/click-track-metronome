@@ -146,4 +146,43 @@ describe('Measure', () => {
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
     expect(lastCall.tempo).toBeNull();
   });
+
+  describe('single-measure arrival tempo', () => {
+    // 6/8 [3,3]: big beat is a dotted quarter, so display = stored quarter BPM * (1/4) / (3/8)
+    function make68Single(endTempo: number | null): MeasureData {
+      return {
+        meter: [6, 8],
+        beats: defaultBeats(6, 8),
+        tempo: 90,
+        rehearsalNumber: null,
+        gradualTempo: { measureLength: 0, endTempo },
+      };
+    }
+
+    it('displays the stored quarter-note tempo in terms of the big beat', () => {
+      render(<Measure {...defaultProps} resolved={resolve(make68Single(120))} />);
+      const input = screen.getByRole('spinbutton', { name: /arrival tempo/i });
+      expect(input).toHaveValue(80); // 120 quarter BPM = 80 dotted-quarter BPM
+    });
+
+    it('commits the typed big-beat tempo back as quarter-note BPM', async () => {
+      const onChange = vi.fn();
+      render(<Measure {...defaultProps} resolved={resolve(make68Single(null))} onChange={onChange} />);
+      const input = screen.getByRole('spinbutton', { name: /arrival tempo/i });
+      await userEvent.type(input, '60');
+      await userEvent.tab();
+      const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
+      expect(lastCall.gradualTempo?.endTempo).toBe(90); // 60 dotted-quarter BPM = 90 quarter BPM
+    });
+
+    it('clearing the input commits endTempo null', async () => {
+      const onChange = vi.fn();
+      render(<Measure {...defaultProps} resolved={resolve(make68Single(120))} onChange={onChange} />);
+      const input = screen.getByRole('spinbutton', { name: /arrival tempo/i });
+      await userEvent.clear(input);
+      await userEvent.tab();
+      const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as MeasureData;
+      expect(lastCall.gradualTempo?.endTempo).toBeNull();
+    });
+  });
 });

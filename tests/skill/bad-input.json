@@ -1,0 +1,6 @@
+{
+  "name": "Deliberately invalid (fixture for the CLI test)",
+  "measures": [
+    { "meter": "7/8", "beats": [2, 2, 2], "tempo": "quarter=120" }
+  ]
+}

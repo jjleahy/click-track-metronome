@@ -1,0 +1,12 @@
+{
+  "name": "Example: accel, rit and fermata",
+  "comment": "Multi-measure accel. (measures 4-5, arriving at the explicit tempo on measure 6), then a single-measure rit. in 6/8 and a 4-second fermata on the last beat.",
+  "measures": [
+    { "meter": "4/4", "tempo": "quarter=80", "repeat": 3 },
+    { "gradual": { "measures": 2 }, "comment": "accel. starts here" },
+    { "comment": "passes through (must not set a tempo)" },
+    { "tempo": "quarter=120", "comment": "arrival: the accel. lands on this tempo", "repeat": 3 },
+    { "meter": "6/8", "tempo": "dotted-quarter=60", "gradual": { "measures": 0, "to": "dotted-quarter=40" } },
+    { "tempo": "dotted-quarter=40", "holds": { "2": 4 } }
+  ]
+}
